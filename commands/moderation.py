@@ -13,12 +13,16 @@ other_parser = OtherParser()
 # Moderation cog. Check todo.md for information on what needs to be done!
 class Moderation(commands.Cog):
     async def write_punishment_data(self, user, seconds: int, source):
-        # Inserts a database entry for banning the user
-        await db.get_database("tuna").get_collection("punishments").insert_one({"gid": user.guild.id, "uid": user.id, "duration": seconds, "type": source})
+        # Inserts a database entry for punishing the user
+        await db.get_database("tuna").get_collection("punishments").insert_one({"uuid": str(uuid.uuid4()), "gid": user.guild.id, "uid": user.id, "duration": seconds, "type": source})
     
-    async def remove_punishment_data(self, user):
-        # Inserts a database entry for banning the user
-        await db.get_database("tuna").get_collection("punishments").delete_one({"gid": user.guild.id, "uid": user.id})
+    async def get_punishment_data(self, uuid):
+        # Get a database entry from the user
+        return await db.get_database("tuna").get_collection("punishments").find_one({"uuid": uuid})
+    
+    async def remove_punishment_data(self, uuid):
+        # Inserts a database entry for punishing the user
+        return (await db.get_database("tuna").get_collection("punishments").delete_one({"uuid":uuid})).raw_result
 
     @commands.bot_has_guild_permissions(ban_members=True)
     # Properly checks the current guild permissions
@@ -88,6 +92,7 @@ class Moderation(commands.Cog):
     @commands.has_guild_permissions(kick_members=True)
     @commands.hybrid_command(description="Gives a member a warning")
     async def warn(self, ctx, member: discord.Member, reason="An unknown reason!"):
+        # Writes the warnings to a database
         await self.write_punishment_data(user=member, seconds=None, source="WARN")
         await ctx.send(content="", embed=(await embed_system.generate_embed(title="Warned user", desc=f"User {member.display_name} has been warned for {reason}", fields=[{"name": "Reason", "value": reason}])))
 
@@ -95,9 +100,28 @@ class Moderation(commands.Cog):
     # Properly checks the current guild permissions
     @commands.has_guild_permissions(kick_members=True)
     @commands.hybrid_command(description="Removes a member's warning")
-    async def unwarn(self, ctx, member: discord.Member, reason="An unknown reason!"):
-        await self.remove_punishment_data(user=member)
-        await ctx.send(content="", embed=(await embed_system.generate_embed(title="Warned user", desc=f"User {member.display_name} has been warned for {reason}", fields=[{"name": "Reason", "value": reason}])))
+    async def unwarn(self, ctx, uuid: str, reason="An unknown reason!"):
+        # Removes the warnings from a database
+        result = await self.get_punishment_data(uuid=uuid)
+        member = await ctx.guild.fetch_member(result.get("uid"))
+        await ctx.send(content="", embed=(await embed_system.generate_embed(title="Removed warn for user", desc=f"User {member.display_name} has been unwarned for {reason}", fields=[{"name": "Reason", "value": reason}])))
+        await self.remove_punishment_data(uuid=uuid)
+
+    @commands.bot_has_guild_permissions(kick_members=True)
+    # Properly checks the current guild permissions
+    @commands.has_guild_permissions(kick_members=True)
+    @commands.hybrid_command(description="List cases for a user")
+    async def cases(self, ctx, member: discord.Member):
+        cursor = db.get_database("tuna").get_collection("punishments").find({"gid": ctx.guild.id, "uid": member.id})
+        cases = await cursor.to_list()
+        case_fields= []
+        for case in cases:
+            if case.get('reason') is not None:
+                case_reason= case['reason']
+            else:
+                case_reason = "Unknown Reason"
+            case_fields.append({"name": case['type'] + " -- " + str(case["uuid"]), "value": case_reason})
+        await ctx.send(content="", embed=(await embed_system.generate_embed(title=f"Cases for {member.name}", desc="Here are the moderation cases", fields=case_fields)))
 
 async def setup(bot):
     # Runs to check if the cog exists, since on_ready is usually called twice.
