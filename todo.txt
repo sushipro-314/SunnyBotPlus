@@ -1,0 +1,12 @@
+Low-level Features:
+- 
+
+High-level Features:
+- Moderation
+- TTS Read Aloud
+- Votekick user command
+- Starboard commands
+- Tags
+- Dice
+- Social Notifications
+- APIs & Games
