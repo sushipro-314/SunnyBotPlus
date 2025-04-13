@@ -164,7 +164,7 @@ class Music(commands.Cog):
 
         # These are commands that require the bot to join a voicechannel (i.e. initiating playback).
         # Commands such as volume/skip etc don't require the bot to be in a voicechannel so don't need listing here.
-        should_connect = ctx.command.name in ('play',)
+        should_connect = ctx.command.name in ('play', 'stop')
 
         voice_client = ctx.voice_client
 
@@ -219,7 +219,7 @@ class Music(commands.Cog):
         guild_id = event.player.guild_id
         guild = self.bot.get_guild(guild_id)
 
-        if guild is not None:
+        if guild is not None and len(guild.members) <= 0:
             await guild.voice_client.disconnect(force=True)
 
     @commands.hybrid_command(aliases=['s', 'skip', 'sk'])
@@ -227,16 +227,27 @@ class Music(commands.Cog):
     async def stop(self, ctx):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         await player.stop()
+        await ctx.send("Player has been stopped!")
+    
+    @commands.hybrid_command(aliases=['vol', 'v'])
+    @commands.check(create_player)
+    async def volume(self, ctx, volume: int):
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        await player.set_volume(volume)
+        await ctx.send("Player volume: " + str(player.volume))
 
     @commands.hybrid_command(aliases=['p'])
     @commands.check(create_player)
-    async def play(self, ctx, query: str, limit: int):
+    async def play(self, ctx, query: str, limit=1):
         """ Searches and plays a song from a given query. """
         # Get the player for this guild from cache.
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
-        # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
+        # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord
         query = query.strip('<>')
-
+        # Checks if there is a source specified, and if there isn't a URL in the query.
+        if not query.split(":") and not url_rx.match(query).string:
+            # If not, then add a youtube search in front of the query
+            query = "ytsearch:" + query
         # Get the results for the query from Lavalink.
         results = await player.node.get_tracks(query)
 
@@ -261,17 +272,23 @@ class Music(commands.Cog):
         else:
             # If not, return 15 as the max limit
             max_limit = 15
-        # Checks a list 
+        # Checks if a list of track's is zero or higher
         if len(results.tracks) >= 0 and (results.load_type != LoadType.ERROR):
+            # If yes, loop over each track
             for tr in results.tracks:
+                # Add to how many songs we should add before stopping
                 duration += 1
+                # Check if the amount of songs we should add is bigger than the maximium limit
                 if duration <= max_limit:
+                    # If not, then add the song to the queue
                     player.add(tr)
                     indexed_track_fields.append({"name": f"{str(results.load_type).capitalize()} has been added!", "value": tr.title + " has been added to the queue"})
                 else:
+                    # If yes, break the loop and end the function
                     break
-        
-        await ctx.send(embed=await parsers[0].generate_embed(title="Track(s) have been queued", desc=f"Tracks have been queued by {ctx.message.author.id}", fields=indexed_track_fields))
+            await ctx.send(embed=await parsers[0].generate_embed(title="Track(s) have been queued", desc=f"Tracks have been queued by {ctx.message.author.id}", fields=indexed_track_fields))
+        elif results.load_type == LoadType.ERROR:
+            await ctx.send("An error occurred attempting to play music!")
 
         # We don't want to call .play() if the player is playing as that will effectively skip
         # the current track.
@@ -329,7 +346,7 @@ class Music(commands.Cog):
         await ctx.voice_client.disconnect(force=True)
         await ctx.send('Disconnected.')
 
-async def setup(bot):#
+async def setup(bot):
     # Runs to check if the cog exists, since on_ready is usually called twice.
     cog_obj = Music(bot)
     if bot.get_cog(cog_obj.__cog_name__) is None:
