@@ -26,6 +26,8 @@ async def add_cogs():
 # Indexes all guilds and syncs entire command tree
 @bot.event
 async def on_ready():
+    activity = discord.Activity(type=discord.ActivityType.playing, name=f"music in {len(bot.voice_clients)} total servers. {config['prefix']}help")
+    bot.activity = discord.Activity(activity=activity, status=discord.Status.idle)
     await other_parser.sync_commands(bot=bot)
     await other_parser.index_guilds(bot=bot)
     await add_cogs()
