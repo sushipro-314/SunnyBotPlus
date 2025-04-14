@@ -8,7 +8,8 @@ These may include primary features at the moment since the bot is still in devel
 ### Pre-requisites
 - Python
 - FFMPEG
-- That's it!
+- LavaLink Nodes. [Public Nodes can be found here](https://lavalink.darrennathanael.com/)
+- A MongoDB Database
 ## Instructions
 Run the following commands to install the bot
 ```
