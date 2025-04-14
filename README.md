@@ -5,6 +5,11 @@ TunaCat is a open-source bot offering Moderation, Music, and more!
 See [todo.md](https://github.com/sushipro-314/TunaCat/blob/master/todo.md) for a list of things that are being implemented
 These may include primary features at the moment since the bot is still in development!
 ## Installation
+### Pre-requisites
+- Python
+- FFMPEG
+- That's it!
+## Instructions
 Run the following commands to install the bot
 ```
 git clone https://github.com/sushipro-314/TunaCat && 
