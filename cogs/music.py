@@ -39,9 +39,12 @@ class Audio(commands.Cog):
                 duration += 1
                 if duration <= limit:
                     logging.info("Indexed song: " + i.title)
-                    await vc.play(i, replace=False)
+                    
                     song_list += f'{i.title}; '
-                    self.jobs.append({vc.guild.id: i})
+                    if vc.current is not None:
+                        await vc.play(i, replace=False)
+                    else:
+                        self.jobs.append({vc.guild.id: i})
                     songs = str(song_list)[:90]
                 else:
                     break
@@ -208,7 +211,7 @@ class Audio(commands.Cog):
                 string_data = f"> {vc.current}"
             else:
                 string_data = ""
-            for i in vc:
+            for i in self.jobs:
                 string_data += f"\n{i.title}"
             await ctx.send(
                 f"{await self.get_emoji(guild=ctx.guild.id, emoji='sunny_thumbsup')} | Here are all the songs in the queue:```{string_data[:2000]}```")
