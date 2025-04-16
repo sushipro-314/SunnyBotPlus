@@ -1,0 +1,31 @@
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x000001EE5C01C430>
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x000001EE5C6811B0>
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x000001EE5BDD51B0>
+Unclosed connector
+connections: ['[(<aiohttp.client_proto.ResponseHandler object at 0x000001EE5C8A9E40>, 1721661.765)]']
+connector: <aiohttp.connector.TCPConnector object at 0x000001EE5BDD54E0>
+Fatal error on SSL transport
+protocol: <asyncio.sslproto.SSLProtocol object at 0x000001EE5BDD61D0>
+transport: <_ProactorSocketTransport fd=688 read=<_OverlappedFuture cancelled>>
+Traceback (most recent call last):
+  File "C:\Users\Jeval\AppData\Local\Programs\Python\Python310\lib\asyncio\sslproto.py", line 690, in _process_write_backlog
+    self._transport.write(chunk)
+  File "C:\Users\Jeval\AppData\Local\Programs\Python\Python310\lib\asyncio\proactor_events.py", line 365, in write
+    self._loop_writing(data=bytes(data))
+  File "C:\Users\Jeval\AppData\Local\Programs\Python\Python310\lib\asyncio\proactor_events.py", line 401, in _loop_writing
+    self._write_fut = self._loop._proactor.send(self._sock, data)
+AttributeError: 'NoneType' object has no attribute 'send'
+Fatal error on SSL transport
+protocol: <asyncio.sslproto.SSLProtocol object at 0x000001EE5BE406D0>
+transport: <_ProactorSocketTransport fd=936 read=<_OverlappedFuture cancelled>>
+Traceback (most recent call last):
+  File "C:\Users\Jeval\AppData\Local\Programs\Python\Python310\lib\asyncio\sslproto.py", line 690, in _process_write_backlog
+    self._transport.write(chunk)
+  File "C:\Users\Jeval\AppData\Local\Programs\Python\Python310\lib\asyncio\proactor_events.py", line 365, in write
+    self._loop_writing(data=bytes(data))
+  File "C:\Users\Jeval\AppData\Local\Programs\Python\Python310\lib\asyncio\proactor_events.py", line 401, in _loop_writing
+    self._write_fut = self._loop._proactor.send(self._sock, data)
+AttributeError: 'NoneType' object has no attribute 'send'

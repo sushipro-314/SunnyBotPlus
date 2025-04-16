@@ -19,25 +19,27 @@ python -m venv .venv &&
 .\.venv\Scripts\activate.bat && 
 pip install -r requirements.txt
 ```
-Almost there! Now make a file that looks something like this, name it `config.json`, and fill out your **Token, Lavalink Information, Prefix, Database**, and server invite! (Prefix and server invite information are optional, leave as is to skip)
+Almost there! Now make a file that looks something like this, name it `config.json`, and fill out your **Token, Lavalink Information, Prefix, Database, shard IDs**, and server invite! (Prefix and server invite information are optional, leave as is to skip)
 ```
 {
-    "token": "DISCORD TOKEN GOES HERE!",
-    "prefix": "tun!",
+    "token": "",
+    "prefix": "te!",
     "uris": {
         "database": "mongodb://localhost",
         "lavalink": [
             {
-                "name": "default-node",
+                "name": "main",
                 "host": "localhost",
-                "port": 80,
-                "pass": "youshallnotpass",
-                "region": "eu"
-            }
+                "port": 2333,
+                "pass": "youshallnotpass12324"
+            },
         ]
     },
     "invite": "https://discord.gg/TCE7KWjc9R",
-    "max_song_count": 15
+    "max_song_count": 15,
+    "shard_ids": [
+        0
+    ]
 }
 ```
 ## Starting the bot

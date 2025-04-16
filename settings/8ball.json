@@ -1,0 +1,38 @@
+[
+  [
+    0,
+    "By my predictions, this is incorrect"
+  ],
+  [
+    1,
+    "By my predictions, this is correct"
+  ],
+  [
+    2,
+    "By my predictions, that is completely absurd"
+  ],
+  [
+    3,
+    "Your mother says no"
+  ],
+  [
+    4,
+    "Your mother says yes"
+  ],
+  [
+    5,
+    "The world is in your hands, as the answer is yes"
+  ],
+  [
+    6,
+    "The world is in your hands, as the answer is no"
+  ],
+  [
+    7,
+    "That is very funny, but no"
+  ],
+  [
+    8,
+    "That is very funny, and the answer is yes"
+  ]
+]
