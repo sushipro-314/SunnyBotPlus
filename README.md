@@ -15,15 +15,13 @@ Run the following commands to install the bot
 ```
 git clone https://github.com/sushipro-314/TunaCat && 
 cd ./TunaCat &&
-python -m venv .venv &&
-.\.venv\Scripts\activate.bat && 
 pip install -r requirements.txt
 ```
 Almost there! Now make a file that looks something like this, name it `config.json`, and fill out your **Token, Lavalink Information, Prefix, Database, shard IDs**, and server invite! (Prefix and server invite information are optional, leave as is to skip)
 ```
 {
     "token": "",
-    "prefix": "te!",
+    "prefix": "tun!",
     "uris": {
         "database": "mongodb://localhost",
         "lavalink": [
@@ -44,4 +42,6 @@ Almost there! Now make a file that looks something like this, name it `config.js
 ```
 ## Starting the bot
 Start the bot by running the command ``python main.py`` on windows. On linux do ``python3 main.py`` instead.
-(NOTE: We do not support MacOS, and probably won't for a long time. you might be able to use brew or another packager for mac, but support isn't fully guaranteed)
+NOTES: 
+- NOTE: **Add a folder called "logs" in the root directory if you are having issues starting the bot**
+- NOTE: We do not support MacOS, and probably won't for a long time. you might be able to use brew or another packager for mac, but support isn't fully guaranteed
