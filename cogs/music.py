@@ -6,15 +6,18 @@ import random
 import time
 
 import discord
-import mafic
+import wavelink
 from discord.ext import commands, tasks
 import typing
 import json
 import psutil
-import common
 import common.parsers
+from wavelink import ExtrasNamespace
+from wavelink.types.tracks import TrackPayload, TrackInfoPayload
 
-default_prefix = common.parsers.GuildParser().config
+parsers = [common.parsers.GuildParser()]
+default_prefix = parsers[0].config["prefix"]
+config = parsers[0].config
 
 class Audio(commands.Cog):
     """
@@ -26,11 +29,12 @@ class Audio(commands.Cog):
     jobs = []
     async def check_and_connect(self, voice_channel, vc):
         if voice_channel and vc is None:
-            vc = await voice_channel.connect(cls=mafic.Player)
+            vc = await voice_channel.connect(cls=wavelink.Player)
             return vc
 
     async def get_emoji(self, emoji, guild):
-        return "🎶"
+        emoji_obj = "🎶"
+        return str(emoji_obj)
 
     async def add_playlist(self, songs, vc, limit):
             song_list = ""
@@ -38,16 +42,18 @@ class Audio(commands.Cog):
             for i in songs:
                 duration += 1
                 if duration <= limit:
-                    logging.info("Indexed song: " + i.title)
-                    
+                    vc.queue.put(i)
                     song_list += f'{i.title}; '
-                    if vc.current is not None:
-                        await vc.play(i, replace=False)
-                    else:
-                        self.jobs.append({vc.guild.id: i})
                     songs = str(song_list)[:90]
                 else:
                     break
+            if not vc.playing:
+                await vc.play(vc.queue.get())
+            vc.current.extras = ExtrasNamespace(
+                {
+                    "loop": False
+                }
+            )
             logging.info(vc)
             logging.info(songs)
             return songs
@@ -58,7 +64,7 @@ class Audio(commands.Cog):
         return f'{emoji} TIP: {random.choice(json_data)}'
 
     async def play_song_lavalink(self, ctx, search, limit, loop_song=False):
-        vc = typing.cast(mafic.Player, ctx.voice_client)
+        vc = typing.cast(wavelink.Player, ctx.voice_client)
 
         # Now we are going to check if the invoker of the command
         # is in the same voice channel than the voice client, when defined.
@@ -68,18 +74,22 @@ class Audio(commands.Cog):
 
         # Now we search for the song. You can optionally
         # pass the "source" keyword, of type "wavelink.TrackSource"
-        song = await vc.fetch_tracks(query=search)
+        if search.split(":"):
+            song = await wavelink.Playable.search(search)
+        else:
+            song = await wavelink.Playable.search("ytsearch:" + search)
 
         if not song:  # In case the song is not found
             return await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | No song found.")  # we return an error message
 
-        if vc.current is None:
+        if not vc.playing:
             song_data = await self.add_playlist(songs=song, vc=vc, limit=limit)
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Now playing: `{song_data}` ({limit} total songs)\n{await self.generate_tip(g=ctx.guild)}")  # and return a success message
         else:
             song_data = await self.add_playlist(songs=song, vc=vc, limit=limit)
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_idea')} | Added `{song_data}` to queue ({limit} total songs)\n{await self.generate_tip(g=ctx.guild)}")  # and return a success message
         logging.info(vc.current)
+        logging.info(vc.queue)
 
 
     # @commands.cooldown(6, 10, commands.BucketType.guild)
@@ -131,8 +141,11 @@ class Audio(commands.Cog):
                       help='Pause the current audio playing')
     async def pause(self, ctx):
         if ctx.voice_client is not None:
-            vc = typing.cast(mafic.Player, ctx.voice_client)
-            vc.pause(not vc.paused)
+            vc = typing.cast(wavelink.Player, ctx.voice_client)
+            if vc.paused:
+                await ctx.voice_client.pause(False)
+            else:
+                await ctx.voice_client.pause(True)
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_jamming')} | Paused currently playing audio\n{await self.generate_tip(g=ctx.guild)}")
         else:
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')}> | There is no audio currently playing!")
@@ -189,13 +202,12 @@ class Audio(commands.Cog):
     @commands.hybrid_command(name='debug', help='A user command that gets debug information about the bot.')
     async def get_audio_lag(self, ctx):
         if ctx.voice_client:
-            vc = typing.cast(mafic.Player, ctx.voice_client)
+            vc = typing.cast(wavelink.Player, ctx.voice_client)
             embed = discord.Embed(
-                title=f"Serving on node {vc.node.label} (Ping: {vc.ping}ms)",
+                title=f"Serving on node {vc.node.identifier} (Ping: {vc.ping}ms)",
                 description=f"Channel: {vc.channel.mention} | Position: {str(datetime.timedelta(milliseconds=vc.position))} | Playing: {vc.current.title}",
             )
-            for j in self.jobs:
-                i = j[ctx.guild.id]
+            for i in vc.queue:
                 if i is not None:
                     embed.add_field(name=i.title,
                                     value=f"{str(datetime.timedelta(milliseconds=i.position))} - From {i.source}")
@@ -204,26 +216,46 @@ class Audio(commands.Cog):
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | There is no voice client connected")
 
     @commands.hybrid_command(name='list', help='List all songs in queue.')
-    async def list_jobs(self, ctx):
+    async def list_queue(self, ctx):
         if ctx.voice_client:
-            vc = typing.cast(mafic.Player, ctx.voice_client)
+            vc = typing.cast(wavelink.Player, ctx.voice_client)
             if vc.current:
                 string_data = f"> {vc.current}"
             else:
                 string_data = ""
-            for i in self.jobs:
+            for i in vc.queue:
                 string_data += f"\n{i.title}"
             await ctx.send(
                 f"{await self.get_emoji(guild=ctx.guild.id, emoji='sunny_thumbsup')} | Here are all the songs in the queue:```{string_data[:2000]}```")
         else:
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | You need to be in a channel with the bot!")
 
+
+    @commands.hybrid_command(name='clear', help='Clears all songs in queue.')
+    async def reset_queue(self, ctx):
+        if ctx.voice_client:
+            vc = typing.cast(wavelink.Player, ctx.voice_client)
+            vc.queue.reset()
+            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Successfully cleared the queue!")
+        else:
+            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | You need to be in a channel with the bot!")
+
+    @commands.hybrid_command(name='remove', help='Remove a song in the queue.')
+    async def remove_song(self, ctx, idx):
+        if ctx.voice_client:
+            vc = typing.cast(wavelink.Player, ctx.voice_client)
+            vc.queue.delete(int(idx + 1))
+            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Removing!")
+        else:
+            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | You need to be in a channel with the bot!")
+
     @commands.hybrid_command(name='volume', help='Sets the volume of the currently playing song.')
     async def change_song_volume(self, ctx, *, volume=50):
         if ctx.voice_client:
-            vc = typing.cast(mafic.Player, ctx.voice_client)
+            vc = typing.cast(wavelink.Player, ctx.voice_client)
             await vc.set_volume(volume)
-            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Volume is now {str(volume)}!")
+            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Volume is now {str(vc.volume)}!")
+            logging.info(vc.volume)
         else:
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | You need to be in a channel with the bot!")
 
@@ -231,6 +263,15 @@ class Audio(commands.Cog):
         if( self.bot.user.avatar == img) and (psutil.cpu_percent() < 70) and (datetime.date.month != 12) and (datetime.date.month != 3):
             return True
 
+    @tasks.loop(minutes=90)
+    async def calculate_profile(self):
+        random_image = random.choice(os.listdir(f"assets/profile/"))
+        image = open(f"assets/profile/{random_image}", 'rb').read()
+        if not await self.avatar_is_equal(img=image):
+            await self.bot.user.edit(avatar=image)
+        if datetime.date.month == 12:
+            image3 = open(f"assets/special/christmas.png", 'rb').read()
+            await self.bot.user.edit(avatar=image3)
 
     async def update_status(self):
         total = len(self.bot.voice_clients)
@@ -238,19 +279,34 @@ class Audio(commands.Cog):
                                              name=f'Music in {total} servers! | {default_prefix}help'))
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
+    async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload):
+        logging.info(str(payload))
         await self.update_status()
-    
+        extra_data = dict(payload.track.extras)
+        if payload.player and not payload.player.playing and not payload.player.queue.is_empty and payload.player.connected:
+            await payload.player.play(payload.player.queue.get())
+        # elif extra_data.get("loop") is not None and extra_data.get("loop") is True:
+        #     await payload.player.play(payload.track)
 
     @commands.Cog.listener()
-    async def track_end(self, event: mafic.TrackEndEvent):
-        logging.info("Continuing next song!")
-        for j in self.jobs:
-            i = j[event.player.guild.id]
-            if (event.player.current is None):
-                event.player.play(i, replace=False)
+    async def on_voice_state_update(self, member, before, after):
+        await self.update_status()
+
+    @commands.Cog.listener()
+    async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
+        await player.channel.send(f"{await self.get_emoji (guild=player.guild.id, emoji='sunny_thinking')} | The player has been inactive for `{player.inactive_timeout}` seconds. We need to disconnect due to practical reasons, hosting costs, etc. Thank you!\n{await self.generate_tip(g=player.guild)}")
+        await player.disconnect()
+
 
 async def setup(bot): # this is called by Pycord to setup the cog
     cog = Audio(bot)
+    nodes = []
+    for node in config['uris']["lavalink"]:
+        nodes.append(wavelink.Node(
+            identifier=node["name"],
+            uri=node["host"] + ":" + str(node["port"]),
+            password=node['pass'],
+        ))
+        await wavelink.Pool.connect(nodes=nodes, client=bot)
     await bot.add_cog(cog) # add the cog to the bot
-    logging.info("started auto-player")
+    logging.info("Connected to nodes!")

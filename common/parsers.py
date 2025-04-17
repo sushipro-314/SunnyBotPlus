@@ -1,6 +1,5 @@
 import os
 import json
-import mafic
 
 from pymongo import AsyncMongoClient
 

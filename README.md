@@ -28,7 +28,7 @@ Almost there! Now make a file that looks something like this, name it `config.js
         "lavalink": [
             {
                 "name": "main",
-                "host": "localhost",
+                "host": "http://localhost",
                 "port": 2333,
                 "pass": "youshallnotpass12324"
             },

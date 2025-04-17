@@ -7,7 +7,6 @@ import shutil
 import string
 
 import discord
-import mafic
 import traceback
 
 from discord.ext import commands
@@ -39,7 +38,6 @@ async def prefix(bot, message):
         return g_data["prefix"], data_parser.default_prefix
 
 bot = commands.AutoShardedBot(command_prefix=prefix, intents=intents, case_insensitive=False, shard_ids=config["shard_ids"], shard_count=len(config["shard_ids"]))
-nodes = mafic.NodePool(bot)
 
 @bot.event
 async def on_guild_join(guild):
@@ -51,16 +49,6 @@ async def sync_commands(guild=None):
     else:
         await bot.tree.sync()
     logging.info("Command tree synced")
-
-async def connect_nodes():
-    """Connect to our Lavalink nodes."""
-    for node in config['uris']["lavalink"]:
-        node = await nodes.create_node(
-            host=node['host'],
-            port=int(node['port']),
-            password=node['pass'],
-            label=node['name'],
-        )
 
 @bot.hybrid_command(name="prefix", help_command="Changes the bot's prefix")
 @commands.has_permissions(manage_guild=True)
@@ -271,7 +259,6 @@ async def on_ready():
     if os.path.exists("jobs"):
         shutil.rmtree("jobs")
     os.mkdir("jobs")
-    await connect_nodes()
     logging.info("Node connections established!")
     guilds_all = await index_guilds()
     logging.info("Guild index successful!")
