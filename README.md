@@ -1,8 +1,10 @@
-# TunaCat
-TunaCat is a open-source bot offering Moderation, Music, and more!
+# SunnyBot+
+SunnyBot is an opens-source discord bot offering Music, Moderation, and more!
 ## BOT IS STILL IN DEVELOPMENT! If you want to help out or use the bot, know that a lot of features are unfinished or not implemented yet.
 ## Contributing
-See [todo.md](https://github.com/sushipro-314/TunaCat/blob/master/todo.md) for a list of things that are being implemented
+[Don't feel like running the bot yourself, use our production version!](https://discord.com/oauth2/authorize?client_id=1029527116536107059)
+
+See [todo.md](https://github.com/sushipro-314/SunnyBotPlus/blob/master/todo.md) for a list of things that are being implemented
 
 These may include primary features at the moment since the bot is still in development!
 ## Installation
@@ -14,8 +16,8 @@ These may include primary features at the moment since the bot is still in devel
 ## Instructions
 Run the following commands to install the bot
 ```
-git clone https://github.com/sushipro-314/TunaCat && 
-cd ./TunaCat &&
+git clone https://github.com/sushipro-314/SunnyBotPlus && 
+cd ./SunnyBotPlus &&
 pip install -r requirements.txt
 ```
 Almost there! Now make a file that looks something like this, name it `config.json`, and fill out your **Token, Lavalink Information, Prefix, Database, shard IDs**, and server invite! (Prefix and server invite information are optional, leave as is to skip)
