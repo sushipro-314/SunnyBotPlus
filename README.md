@@ -1,8 +1,8 @@
-# TunaCat
-TunaCat is a open-source bot offering Moderation, Music, and more!
+# SunnyBot+
+SunnyBot is an opens-source discord bot offering Music, Moderation, and more!
 ## BOT IS STILL IN DEVELOPMENT! If you want to help out or use the bot, know that a lot of features are unfinished or not implemented yet.
 ## Contributing
-See [todo.md](https://github.com/sushipro-314/TunaCat/blob/master/todo.md) for a list of things that are being implemented
+See [todo.md](https://github.com/sushipro-314/SunnyBotPlus/blob/master/todo.md) for a list of things that are being implemented
 
 These may include primary features at the moment since the bot is still in development!
 ## Installation
