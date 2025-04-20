@@ -16,8 +16,8 @@ These may include primary features at the moment since the bot is still in devel
 ## Instructions
 Run the following commands to install the bot
 ```
-git clone https://github.com/sushipro-314/SunnyBotPlus && 
-cd ./SunnyBotPlus &&
+git clone https://github.com/sushipro-314/SunnyBotPlus
+cd ./SunnyBotPlus
 pip install -r requirements.txt
 ```
 Almost there! Now make a file that looks something like this, name it `config.json`, and fill out your **Token, Lavalink Information, Prefix, Database, shard IDs**, and server invite! (Prefix and server invite information are optional, leave as is to skip)
