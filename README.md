@@ -24,7 +24,7 @@ Almost there! Now make a file that looks something like this, name it `config.js
 ```
 {
     "token": "",
-    "prefix": "tun!",
+    "prefix": "sun$",
     "uris": {
         "database": "mongodb://localhost",
         "lavalink": [
