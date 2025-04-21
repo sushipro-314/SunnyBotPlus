@@ -125,7 +125,7 @@ async def dev_announce_send(ctx, message):
 async def send_banned_embed(guild):
     bannedembed = discord.Embed(
         title=f"{guild.name} - Safety message",
-        description=f"You're server has been remotely disabled by a developer or another staff member! If you wish to appeal, please see our (discord server)[https://discord.gg/TCE7KWjc9R]. Thank you for your cooperation!",
+        description=f"You're server has been remotely disabled by a developer or another staff member! If you wish to appeal, please see the (discord server)[https://discord.gg/TCE7KWjc9R]. Thank you for your cooperation!",
     )
     if guild.system_channel:
         await guild.system_channel.send(embed=bannedembed)
@@ -231,11 +231,13 @@ async def index_cogs():
     cog_list = os.listdir("cogs")
     for i in cog_list:
         if i.endswith(".py"):
-            if "disabled" not in i:
+            if ("disabled" not in i) and ((bot.get_cog("cogs." + i.split('.')[0])) is None):
                 await bot.load_extension(f"cogs.{i.split('.')[0]}")
                 logging.info(f"indexed and loaded extension with path: {i}")
+            elif ((bot.get_cog("cogs." + i.split('.')[0])) is not None):
+                await bot.unload_extension(f"cogs.{i.split('.')[0]}")
             else:
-                logging.warning(f"Ignoring extension: {i}, extension disabled")
+                logging.warning(f"Ignoring extension: {i}, extension disabled or has already been loaded!")
 
 
 async def index_guilds():
@@ -327,10 +329,10 @@ async def on_command_error(ctx, error: discord.DiscordException):
             err_msg = i["message"]
             break
         else:
-            err_msg = "We cannot explain this error"
+            err_msg = "Cannot explain this error"
     error_id = await random_digits()
     await ctx.send(
-        f"An error occurred: ```{error}``` {err_msg}. If this error happens continually, contact our support server! (Crash ID: {error_id})")
+        f"An error occurred: ```{error}``` {err_msg}. If this error happens continually, contact the support server! (Crash ID: {error_id})")
     error_json = {
         "id": error_id,
         "error": error.args
