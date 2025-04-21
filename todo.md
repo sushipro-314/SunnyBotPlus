@@ -18,6 +18,7 @@
 - ~~Say, Specify what you wish for the TTS to say, then send it to a .mp3 or another file with a command format.~~
 ## Tags
 - Reaction tags, mention a word and it will have a reaction to that message.
+- Random Tags. Like custom or reaction tags but tags have a random chance.
 - Custom tags, all other tags. Send a message and get a preset message back.
 ## Fun
 - ~~Dice, Basically just a RNG dice roller.~~
