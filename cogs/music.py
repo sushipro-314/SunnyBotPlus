@@ -11,13 +11,15 @@ from discord.ext import commands, tasks
 import typing
 import json
 import psutil
+from gtts import gTTS
 import common.parsers
 from wavelink import ExtrasNamespace
 from wavelink.types.tracks import TrackPayload, TrackInfoPayload
 
-parsers = [common.parsers.GuildParser()]
+parsers = [common.parsers.GuildParser(), common.parsers.ConfigParser()]
 default_prefix = parsers[0].config["prefix"]
 config = parsers[0].config
+db = parsers[0].db
 
 class Audio(commands.Cog):
     """
@@ -27,9 +29,15 @@ class Audio(commands.Cog):
     def __init__(self, bot): # this is a special method that is called when the cog is loaded
         self.bot = bot
     jobs = []
-    async def check_and_connect(self, voice_channel, vc):
+
+    async def check_and_connect(self, voice_channel, vc, tts=False):
         if voice_channel and vc is None:
             vc = await voice_channel.connect(cls=wavelink.Player)
+            if tts:
+                await db.get_database("tts").get_collection("clients").delete_many({"channel_id": voice_channel.id})
+                await db.get_database("tts").get_collection("clients").insert_one({
+                    "channel_id": voice_channel.id
+                })
             return vc
 
     async def get_emoji(self, emoji, guild):
@@ -155,10 +163,10 @@ class Audio(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.guild)
     @commands.hybrid_command(name='connect',
                    help='Makes the bot join a voice channel.')
-    async def connect(self, ctx):
+    async def connect(self, ctx, tts=False):
         voice_channel = ctx.message.author.voice.channel
         try:
-            await self.check_and_connect(voice_channel=voice_channel, vc=ctx.voice_client)
+            await self.check_and_connect(voice_channel=voice_channel, vc=ctx.voice_client, tts=tts)
             await ctx.channel.send(
                 f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Joined Voice Channel successfully!\n{await self.generate_tip(g=ctx.guild)}")
         except discord.ClientException:
@@ -275,6 +283,7 @@ class Audio(commands.Cog):
 
     async def update_status(self):
         total = len(self.bot.voice_clients)
+        await asyncio.sleep(9)
         await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing,
                                              name=f'Music in {total} servers! | {default_prefix}help'))
 
