@@ -34,7 +34,7 @@ Almost there! Now make a file that looks something like this, name it `config.js
                 "host": "http://localhost",
                 "port": 2333,
                 "pass": "youshallnotpass12324"
-            },
+            }
         ]
     },
     "invite": "https://discord.gg/TCE7KWjc9R",
