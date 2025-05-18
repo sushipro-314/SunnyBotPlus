@@ -211,15 +211,18 @@ class Audio(commands.Cog):
     async def get_audio_lag(self, ctx):
         if ctx.voice_client:
             vc = typing.cast(wavelink.Player, ctx.voice_client)
-            embed = discord.Embed(
-                title=f"Serving on node {vc.node.identifier} (Ping: {vc.ping}ms)",
-                description=f"Channel: {vc.channel.mention} | Position: {str(datetime.timedelta(milliseconds=vc.position))} | Playing: {vc.current.title}",
-            )
-            for i in vc.queue:
-                if i is not None:
-                    embed.add_field(name=i.title,
+            if vc.current:
+                embed = discord.Embed(
+                    title=f"Serving on node {vc.node.identifier} (Ping: {vc.ping}ms)",
+                    description=f"Channel: {vc.channel.mention} | Position: {str(datetime.timedelta(milliseconds=vc.position))} | Playing: {vc.current.title}",
+                )
+                for i in vc.queue:
+                    if i is not None:
+                        embed.add_field(name=i.title,
                                     value=f"{str(datetime.timedelta(milliseconds=i.position))} - From {i.source}")
-            await ctx.send(embed=embed)
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | Nothing is playing!")
         else:
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | There is no voice client connected")
 
@@ -271,16 +274,6 @@ class Audio(commands.Cog):
         if( self.bot.user.avatar == img) and (psutil.cpu_percent() < 70) and (datetime.date.month != 12) and (datetime.date.month != 3):
             return True
 
-    @tasks.loop(minutes=90)
-    async def calculate_profile(self):
-        random_image = random.choice(os.listdir(f"assets/profile/"))
-        image = open(f"assets/profile/{random_image}", 'rb').read()
-        if not await self.avatar_is_equal(img=image):
-            await self.bot.user.edit(avatar=image)
-        if datetime.date.month == 12:
-            image3 = open(f"assets/special/christmas.png", 'rb').read()
-            await self.bot.user.edit(avatar=image3)
-
     async def update_status(self):
         total = len(self.bot.voice_clients)
         await asyncio.sleep(9)
@@ -303,8 +296,9 @@ class Audio(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
-        await player.channel.send(f"{await self.get_emoji (guild=player.guild.id, emoji='sunny_thinking')} | The player has been inactive for `{player.inactive_timeout}` seconds. We need to disconnect due to practical reasons, hosting costs, etc. Thank you!\n{await self.generate_tip(g=player.guild)}")
-        await player.disconnect()
+        if player and player.guild:
+            await player.channel.send(f"{await self.get_emoji (guild=player.guild.id, emoji='sunny_thinking')} | The player has been inactive for `{player.inactive_timeout}` seconds. We need to disconnect due to practical reasons, hosting costs, etc. Thank you!\n{await self.generate_tip(g=player.guild)}")
+            await player.disconnect()
 
 
 async def setup(bot): # this is called by Pycord to setup the cog

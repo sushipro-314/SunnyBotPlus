@@ -32,16 +32,12 @@ token = config['token']
 
 async def prefix(bot, message):
     g_data = await data_parser.get_guild_data(message.guild.id)
-    if g_data["prefix"] is None:
+    if (g_data is None) or (g_data["prefix"] is None):
         return data_parser.default_prefix
     else:
         return g_data["prefix"], data_parser.default_prefix
 
 bot = commands.AutoShardedBot(command_prefix=prefix, intents=intents, case_insensitive=False, shard_ids=config["shard_ids"], shard_count=len(config["shard_ids"]))
-
-@bot.event
-async def on_guild_join(guild):
-    os.mkdir(f"jobs/{guild.id}")
 
 async def sync_commands(guild=None):
     if guild is not None:
@@ -158,11 +154,14 @@ async def unban_server(ctx, guild_id):
 
 @bot.hybrid_command(name="eval", help_command="Developer Only.")
 @commands.has_permissions(manage_guild=True)
-async def eval_code(ctx, code):
+async def eval_code(ctx, code, awaitable=False):
     developers = open('settings/developers.txt').readline()
     if ctx.message.author.name in developers:
-        evaluation = eval(code)
-        await ctx.send("Evaluated Code Successfully! Result:", evaluation)
+        if awaitable:
+            await eval(code)
+        else:
+            eval(code)
+        await ctx.send("Evaluated Code Successfully!")
     else:
         await ctx.send(f"Congrats!! You found the eval command, allowing people to directly run code on the host machine. Such a shame it only works for {random.choice(developers)} though...")
 
