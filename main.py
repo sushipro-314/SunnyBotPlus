@@ -32,65 +32,34 @@ token = config['token']
 
 async def prefix(bot, message):
     g_data = await data_parser.get_guild_data(message.guild.id)
-    if (g_data is None) or (g_data["prefix"] is None):
+    if (g_data is None) or (g_data is None) or (g_data.get("prefix") is None):
         return data_parser.default_prefix
     else:
         return g_data["prefix"], data_parser.default_prefix
 
-bot = commands.AutoShardedBot(command_prefix=prefix, intents=intents, case_insensitive=False, shard_ids=config["shard_ids"], shard_count=len(config["shard_ids"]))
+bot = commands.AutoShardedBot(command_prefix=prefix, intents=intents, case_insensitive=False, shard_ids=config["shard_ids"], shard_count=config["shard_count"] or len(config["shard_ids"]))
 
 async def sync_commands(guild=None):
     if guild is not None:
-        await bot.tree.sync(guild=guild.id)
+        await bot.tree.sync(guild=guild)
     else:
         await bot.tree.sync()
     logging.info("Command tree synced")
 
-@bot.hybrid_command(name="prefix", help_command="Changes the bot's prefix")
+@commands.cooldown(2, 7.3, commands.BucketType.guild)
+@bot.hybrid_command(name="config", help_command="Changes the server configuration.")
 @commands.has_permissions(manage_guild=True)
-async def change_prefix(ctx, change_prefix):
-    written = await data_parser.generate_prefix(guild=ctx.guild, prefix=change_prefix)
-    await ctx.send(f"Prefix changed to {written['prefix']} successfully!")
-
-@bot.hybrid_group(name="announcements", help_command="Information for sending/receiving announcements from the bot hoster.")
-@commands.has_permissions(manage_guild=True)
-async def dev_announce(ctx):
-    pass
-
-@dev_announce.command(name="add",
-               help_command="Adds the channel for sending/receiving announcements from the bot hoster.")
-@commands.has_permissions(manage_guild=True)
-async def dev_announce_add(ctx, channel: discord.TextChannel):
-    guild_data = await data_parser.get_guild_data(ctx.guild.id)
-    guild_json_write = {
-        "prefix": guild_data["prefix"],
-        "dev_announce": channel.id,
-        "perms": [
-            "dev_announce_change",
-        ],
-        "starboard": guild_data["starboard"],
-        "mod_role": guild_data["mod_role"],
-        "disabled": guild_data["disabled"]
-    }
-    written = await data_parser.write_guild_data(guild_id=ctx.guild.id, data=guild_json_write)
-    await ctx.send(f"Announcements channel changed to <#{written['dev_announce']}> successfully!")
-
-@dev_announce.command(name="rm", help_command="Removes the channel for sending/receiving announcements from the bot hoster.")
-@commands.has_permissions(manage_guild=True)
-async def dev_announce_remove(ctx):
-    guild_data = await data_parser.get_guild_data(ctx.guild.id)
-    guild_json_write = {
-        "prefix": guild_data["prefix"],
-        "dev_announce": None,
-        "perms": [
-            "dev_announce_change",
-        ],
-        "starboard": guild_data["starboard"],
-        "mod_role": guild_data["mod_role"],
-        "disabled": guild_data["disabled"]
-    }
-    await data_parser.write_guild_data(guild_id=ctx.guild.id, data=guild_json_write)
-    await ctx.send("You have opted out for developer announcements!")
+async def update_config(ctx, value, setting=""):
+        g_data = await data_parser.get_guild_data(ctx.guild.id)
+        if g_data is not None:
+            g_data[setting] = value
+            g_data_new = await data_parser.write_guild_data(ctx.guild.id, g_data)
+            if g_data_new:
+                await ctx.send(f"Updated Configuration for server {ctx.guild.name}, value is now {value}")
+            else:
+                await ctx.send(f"Updated Configuration for server {ctx.guild.name}, value is now **Unknown**")
+        else:
+            await ctx.send("An unknown error occurred and we couldn't find your guild data. Please try again later!")
 
 async def send_all_guilds(message, content, developer):
     async for g in bot.fetch_guilds():
@@ -161,7 +130,7 @@ async def eval_code(ctx, code, awaitable=False):
             await eval(code)
         else:
             eval(code)
-        await ctx.send("Evaluated Code Successfully!")
+        await ctx.send("Evaluated Code Successfully! Result: " + eval(code))
     else:
         await ctx.send(f"Congrats!! You found the eval command, allowing people to directly run code on the host machine. Such a shame it only works for {random.choice(developers)} though...")
 
@@ -188,7 +157,7 @@ async def search_database(ctx, collection, data="guilds"):
         await ctx.send(f"Congrats!! You found the get db command, allowing people to search the entire database. Such a shame it only works for {random.choice(developers)} though...")
 
 @bot.hybrid_command(name="sync", help_command="Developer Only.")
-async def donate_message(ctx):
+async def sync_command(ctx):
     if ctx.message.author.name in open('settings/developers.txt').readline():
         await sync_commands()
         await ctx.send("Synced.")
@@ -211,20 +180,6 @@ async def on_guild_join(guild):
 async def on_guild_remove(guild):
     logging.info("removing guild data for... " + str(guild.name))
     await db.get_database("guilds").get_collection(str(guild.id)).delete_many({})
-
-@bot.event
-async def on_reaction_add(reaction, user):
-        message = reaction.message
-        data = await data_parser.get_guild_data(user.guild.id)
-        starboard_embed = discord.Embed(
-            title=f"{message.author.name} - Starboard Message",
-            description=f"Starboard by: <@{message.author.id}>\n\n{message.content}",
-        )
-        logging.info(str(reaction.count))
-        if reaction.count >= data["starboard"]["max"] and reaction.emoji == data["starboard"]["emoji"]:
-            channel_obj = discord.utils.get(message.guild.channels, id=data["starboard"]["channel"])
-            await channel_obj.send(f"⭐{reaction.count} | {message.content}")
-
 
 async def index_cogs():
     cog_list = os.listdir("cogs")
@@ -260,7 +215,6 @@ async def on_ready():
     if os.path.exists("jobs"):
         shutil.rmtree("jobs")
     os.mkdir("jobs")
-    logging.info("Node connections established!")
     guilds_all = await index_guilds()
     logging.info("Guild index successful!")
     await index_cogs()

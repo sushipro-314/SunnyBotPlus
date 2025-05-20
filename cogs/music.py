@@ -33,11 +33,6 @@ class Audio(commands.Cog):
     async def check_and_connect(self, voice_channel, vc, tts=False):
         if voice_channel and vc is None:
             vc = await voice_channel.connect(cls=wavelink.Player)
-            if tts:
-                await db.get_database("tts").get_collection("clients").delete_many({"channel_id": voice_channel.id})
-                await db.get_database("tts").get_collection("clients").insert_one({
-                    "channel_id": voice_channel.id
-                })
             return vc
 
     async def get_emoji(self, emoji, guild):
@@ -310,6 +305,6 @@ async def setup(bot): # this is called by Pycord to setup the cog
             uri=node["host"] + ":" + str(node["port"]),
             password=node['pass'],
         ))
-        await wavelink.Pool.connect(nodes=nodes, client=bot)
+    await wavelink.Pool.connect(nodes=nodes, client=bot)
     await bot.add_cog(cog) # add the cog to the bot
     logging.info("Connected to nodes!")

@@ -120,7 +120,7 @@ class Moderation(commands.Cog):
         embed = discord.Embed(
             description=f"🚓 | Information: {ctx.guild.name}",
             title=f"Guild information for {ctx.guild.name} owned by {str(ctx.guild.owner)}")
-        embed.add_field(name="Roles", value=f'The following roles are in the guild: ```{str(ctx.guild.roles)[:1000]}```')
+        embed.add_field(name="Roles", value=f'The following roles are in the guild: ```{str(ctx.guild.roles)[:100]}```')
         embed.set_footer(text=f"Server ID: {ctx.guild.id} | Created at: <t:{str(ctx.guild.created_at.timestamp())}:F>")
         await ctx.send(embed=embed)
 
