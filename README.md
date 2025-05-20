@@ -1,5 +1,5 @@
 # SunnyBot+
-SunnyBot is an opens-source discord bot offering Music, Moderation, and more!
+SunnyBot is an open-source discord bot offering Music, Moderation, and more!
 ## BOT IS STILL IN DEVELOPMENT! If you want to help out or use the bot, know that a lot of features are unfinished or not implemented yet.
 ## Contributing
 [Don't feel like running the bot yourself, use our production version!](https://discord.com/oauth2/authorize?client_id=1029527116536107059)
