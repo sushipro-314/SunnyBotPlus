@@ -1,0 +1,12 @@
+{
+    "prefix": "sun$",
+    "starboard": {
+        "channel": 0,
+        "emoji": ":star:",
+        "max": 2
+    },
+    "xp_gain": 10,
+    "xp_cost": 1000,
+    "mod_role": 0,
+    "disabled": false
+}

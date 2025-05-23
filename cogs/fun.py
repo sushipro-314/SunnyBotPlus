@@ -203,6 +203,19 @@ class FunOrRandom(commands.Cog):
     async def roll_dice(self, ctx, number=0, to=6):
         roll = random.randint(number, to)
         await ctx.send(f"🎲 | You rolled a {roll}!")
+    
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        message = reaction.message
+        data = await data_parser.get_guild_data(user.guild.id)
+        starboard_embed = discord.Embed(
+            title=f"{message.author.name} - Starboard Message",
+            description=f"Starboard by: <@{message.author.id}>\n\n{message.content}",
+        )
+        logging.info(str(reaction.count))
+        if reaction.count >= data["starboard"]["max"] and reaction.emoji == data["starboard"]["emoji"]:
+            channel_obj = discord.utils.get(message.guild.channels, id=data["starboard"]["channel"])
+            await channel_obj.send(f"⭐{reaction.count} | {message.content}", embeds=[starboard_embed])
 
 async def setup(bot): # this is called by Pycord to setup the cog
     cog = FunOrRandom(bot)

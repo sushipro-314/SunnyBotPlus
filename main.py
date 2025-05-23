@@ -46,12 +46,14 @@ async def sync_commands(guild=None):
         await bot.tree.sync()
     logging.info("Command tree synced")
 
+default_json_server = json.loads(str(open("./settings/default_server_config.json", 'r+').read()))
+
 @commands.cooldown(2, 7.3, commands.BucketType.guild)
-@bot.hybrid_command(name="config", help_command="Changes the server configuration.")
+@bot.hybrid_command(name="config", help_command="Changes the server configuration manually. WARNING: This may cause unexpected behaviors, it's best to use module-specific commands to update server information!")
 @commands.has_permissions(manage_guild=True)
 async def update_config(ctx, value, setting=""):
         g_data = await data_parser.get_guild_data(ctx.guild.id)
-        if g_data is not None:
+        if g_data is not None and (setting in default_json_server.keys()):
             g_data[setting] = value
             g_data_new = await data_parser.write_guild_data(ctx.guild.id, g_data)
             if g_data_new:
@@ -59,7 +61,7 @@ async def update_config(ctx, value, setting=""):
             else:
                 await ctx.send(f"Updated Configuration for server {ctx.guild.name}, value is now **Unknown**")
         else:
-            await ctx.send("An unknown error occurred and we couldn't find your guild data. Please try again later!")
+            await ctx.send("Please double check that you are setting the correct values and try again!")
 
 async def send_all_guilds(message, content, developer):
     async for g in bot.fetch_guilds():
@@ -73,7 +75,8 @@ async def send_all_guilds(message, content, developer):
                     description=content
                 )
                 logging.info(f"Sent data to {g.name}")
-                await dev_announce_channel.send(embed=embed)
+                if isinstance(dev_announce_channel, discord.TextChannel):
+                    await dev_announce_channel.send(embed=embed)
         except ():
             logging.info(f"Could not send data to guild {g.name}")
     await message.edit(content=f"Sent to all guilds!")
@@ -173,25 +176,24 @@ async def on_guild_join(guild):
     await data_parser.generate_guild_data(guild=guild)
     system_channel = await data_parser.generate_system_channel(guild=guild)
     system_channel_obj = await bot.fetch_channel(system_channel)
-    if system_channel != 0:
+    if system_channel != 0 and isinstance(system_channel_obj, discord.TextChannel):
         await system_channel_obj.send(embed=embed)
-
-@bot.event
-async def on_guild_remove(guild):
-    logging.info("removing guild data for... " + str(guild.name))
-    await db.get_database("guilds").get_collection(str(guild.id)).delete_many({})
 
 async def index_cogs():
     cog_list = os.listdir("cogs")
     for i in cog_list:
         if i.endswith(".py"):
-            if ("disabled" not in i) and ((bot.get_cog("cogs." + i.split('.')[0])) is None):
-                await bot.load_extension(f"cogs.{i.split('.')[0]}")
-                logging.info(f"indexed and loaded extension with path: {i}")
-            elif ((bot.get_cog("cogs." + i.split('.')[0])) is not None):
-                await bot.unload_extension(f"cogs.{i.split('.')[0]}")
-            else:
-                logging.warning(f"Ignoring extension: {i}, extension disabled or has already been loaded!")
+            try:
+                if ("disabled" not in i):
+                    await bot.load_extension(f"cogs.{i.split('.')[0]}")
+                    logging.info(f"indexed and loaded extension with path: {i}")
+                elif("disabled" in i):
+                    logging.warning(f"Unloading extension: {i}, extension disabled!")
+                    await bot.unload_extension(f"cogs.{i.split('.')[0]}")
+            except commands.ExtensionAlreadyLoaded:
+                logging.error("Failed to load extension: Extension has already been loaded. This could be due to a reconnect or other issues.")
+            except commands.ExtensionError:
+                logging.error("Failed to load extension: Unknown error. Sorry!")
 
 
 async def index_guilds():
@@ -202,8 +204,6 @@ async def index_guilds():
         if not await data_parser.guild_exists(g.id):
             await data_parser.generate_guild_data(guild=g)
             system_c = await data_parser.generate_system_channel(guild=g)
-            await data_parser.generate_starboard(guild=g, channel=system_c, emoji="⭐",
-                                     max_count=2)
         indexed_guilds.put_nowait(g)
     return indexed_guilds
 @bot.event
