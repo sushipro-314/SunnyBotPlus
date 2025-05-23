@@ -109,6 +109,7 @@ class Games(commands.Cog):
         await ctx.send(embeds=[rank_embed])
     
     @rankconfig.command(help="Set a channel to recieve rank-ups from members")
+    @commands.has_permissions(manage_guild=True)
     async def setchannel(self, ctx, channel: discord.TextChannel):
         guild_data = await data_parser.get_guild_data(ctx.guild.id)
         if guild_data is not None:
@@ -120,6 +121,7 @@ class Games(commands.Cog):
             await ctx.send("Guild data was not found. Please try again or reinvite the bot.")
     
     @rankconfig.command(help="Remove the channel that recieves rank-ups from members")
+    @commands.has_permissions(manage_guild=True)
     async def remchannel(self, ctx, channel: discord.TextChannel):
         guild_data = await data_parser.get_guild_data(ctx.guild.id)
         if guild_data is not None:
@@ -131,6 +133,7 @@ class Games(commands.Cog):
             await ctx.send("Guild data was not found. Please try again or reinvite the bot.")
     
     @rankconfig.command(help="Set the amount of XP earned per message")
+    @commands.has_permissions(manage_guild=True)
     async def setgain(self, ctx, xp: int):
         guild_data = await data_parser.get_guild_data(ctx.guild.id)
         if guild_data is not None:
@@ -142,6 +145,7 @@ class Games(commands.Cog):
             await ctx.send("Guild data was not found. Please try again or reinvite the bot.")
     
     @rankconfig.command(help="Set the amount of XP required for leveling up members")
+    @commands.has_permissions(manage_guild=True)
     async def setcost(self, ctx, xp: int):
         guild_data = await data_parser.get_guild_data(ctx.guild.id)
         if guild_data is not None:
@@ -153,6 +157,7 @@ class Games(commands.Cog):
             await ctx.send("Guild data was not found. Please try again or reinvite the bot.")
     
     @rankconfig.command(help="Sets the current rank for a member")
+    @commands.has_permissions(manage_guild=True)
     async def set(self, ctx, member: discord.Member, rank=0):
         user_data = await self.fetch_user_levels(member=member, guild_data=ctx.guild)
         if user_data is not None:
@@ -164,6 +169,7 @@ class Games(commands.Cog):
             await ctx.send("User was not found.")
     
     @rankconfig.command(help="Sets the current amount of xp for a member")
+    @commands.has_permissions(manage_guild=True)
     async def setxp(self, ctx, member: discord.Member, xp=10):
         user_data = await self.fetch_user_levels(member=member, guild_data=ctx.guild)
         if user_data is not None:
