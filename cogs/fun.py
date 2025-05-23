@@ -13,7 +13,10 @@ import logging
 
 from googleapiclient.discovery import build
 from translate import Translator
+from common.parsers import GuildParser
 from asyncio.subprocess import create_subprocess_exec, create_subprocess_shell
+
+data_parser = GuildParser()
 
 class FunOrRandom(commands.Cog):
     """
