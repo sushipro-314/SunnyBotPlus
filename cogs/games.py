@@ -76,8 +76,8 @@ class Games(commands.Cog):
         poke_embed.set_footer(text="Powered by PokeAPI")
         await ctx.send(embeds=[poke_embed])
     
-    async def vaildate_json(self, user_data, member, guild_data):
-        return (user_data is not None) and user_data["uid"] and (guild_data is not None) and (guild_data.get("xp_gain") and guild_data.get('xp_cost')) and (user_data["uid"] == member.id)
+    async def vaildate_json(self, user_data, member: discord.Member, guild_data):
+        return (user_data is not None) and user_data["uid"] and (guild_data is not None) and (guild_data.get("xp_gain") and guild_data.get('xp_cost')) and (user_data["uid"] == member.id) and not member.bot
     
     async def fetch_user_levels(self, member: discord.Member, guild_data=None):
         json_data = await data_parser.get_member_data(member=member)

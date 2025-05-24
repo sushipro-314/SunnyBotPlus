@@ -30,10 +30,10 @@ class Audio(commands.Cog):
         self.bot = bot
     jobs = []
 
-    async def check_and_connect(self, voice_channel, vc, tts=False):
+    async def check_and_connect(self, voice_channel: discord.VoiceChannel, vc, tts=False):
         if voice_channel and vc is None:
-            vc = await voice_channel.connect(cls=wavelink.Player)
-            return vc
+            voice = await voice_channel.connect(cls=wavelink.Player, self_deaf=True)
+            return voice
 
     async def get_emoji(self, emoji, guild):
         emoji_obj = "🎶"
@@ -145,10 +145,7 @@ class Audio(commands.Cog):
     async def pause(self, ctx):
         if ctx.voice_client is not None:
             vc = typing.cast(wavelink.Player, ctx.voice_client)
-            if vc.paused:
-                await ctx.voice_client.pause(False)
-            else:
-                await ctx.voice_client.pause(True)
+            await ctx.voice_client.pause(not vc.paused)
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_jamming')} | Paused currently playing audio\n{await self.generate_tip(g=ctx.guild)}")
         else:
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')}> | There is no audio currently playing!")
@@ -162,7 +159,7 @@ class Audio(commands.Cog):
         voice_channel = ctx.message.author.voice.channel
         try:
             await self.check_and_connect(voice_channel=voice_channel, vc=ctx.voice_client, tts=tts)
-            await ctx.channel.send(
+            await ctx.send(
                 f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Joined Voice Channel successfully!\n{await self.generate_tip(g=ctx.guild)}")
         except discord.ClientException:
             await ctx.channel.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | An client error happened! Try stopping and starting the song.")
@@ -173,16 +170,16 @@ class Audio(commands.Cog):
     async def disconnect(self, ctx):
         try:
             await ctx.voice_client.disconnect()
-            await ctx.channel.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Left voice channel\n{await self.generate_tip(g=ctx.guild)}")
+            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Left voice channel\n{await self.generate_tip(g=ctx.guild)}")
         except discord.ClientException:
-            await ctx.channel.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | An client error happened! Try stopping and starting the song.")
+            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | An client error happened! Try stopping and starting the song.")
 
     @commands.hybrid_command(name='stop', help='Stop audio that is currently playing.')
     async def stop_audio(self, ctx):
         voice_channel = ctx.message.author.voice.channel
         if voice_channel:
                 await ctx.voice_client.stop()
-                await ctx.channel.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_jamming')} | Stopped the playing track\n{await self.generate_tip(g=ctx.guild)}")
+                await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_jamming')} | Stopped the playing track\n{await self.generate_tip(g=ctx.guild)}")
                 return
         else:
             await ctx.channel.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | No voice channel exists. Try reconnecting or join a different voice channel and reconnect the bot.")
@@ -247,7 +244,7 @@ class Audio(commands.Cog):
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | You need to be in a channel with the bot!")
 
     @commands.hybrid_command(name='remove', help='Remove a song in the queue.')
-    async def remove_song(self, ctx, idx):
+    async def remove_song(self, ctx, idx: int):
         if ctx.voice_client:
             vc = typing.cast(wavelink.Player, ctx.voice_client)
             vc.queue.delete(int(idx + 1))
