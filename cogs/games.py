@@ -183,7 +183,7 @@ class Games(commands.Cog):
             ])
         else:
             logging.error("Failed to set rank channel: guild data not found")
-            await ctx.send("User was not found.")
+            await ctx.send("Guild data was not found.")
 
     @commands.Cog.listener()
     @commands.guild_only()

@@ -15,6 +15,8 @@ import common.parsers
 
 intents = discord.Intents.all()
 
+indexed_guilds = asyncio.Queue()
+
 
 data_parser = common.parsers.GuildParser()
 
@@ -129,11 +131,8 @@ async def unban_server(ctx, guild_id):
 async def eval_code(ctx, code, awaitable=False):
     developers = open('settings/developers.txt').readline()
     if ctx.message.author.name in developers:
-        if awaitable:
-            await eval(code)
-        else:
-            eval(code)
-        await ctx.send("Evaluated Code Successfully! Result: " + eval(code))
+        eval(code)
+        await ctx.send("Evaluated Code Successfully! Result: " + str(eval(code)))
     else:
         await ctx.send(f"Congrats!! You found the eval command, allowing people to directly run code on the host machine. Such a shame it only works for {random.choice(developers)} though...")
 
@@ -197,7 +196,6 @@ async def index_cogs():
 
 
 async def index_guilds():
-    indexed_guilds = asyncio.Queue()
     index = 0
     async for g in bot.fetch_guilds():
         index += 1
