@@ -169,7 +169,7 @@ class Audio(commands.Cog):
                    help='Makes the bot leave a voice channel.')
     async def disconnect(self, ctx):
         try:
-            await ctx.voice_client.disconnect()
+            await typing.cast(wavelink.Player, ctx.voice_client).disconnect()
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Left voice channel\n{await self.generate_tip(g=ctx.guild)}")
         except discord.ClientException:
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | An client error happened! Try stopping and starting the song.")
@@ -233,6 +233,14 @@ class Audio(commands.Cog):
         else:
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | You need to be in a channel with the bot!")
 
+    @commands.hybrid_command(name='seek', help='Seeks to the seconds in the currently playing song.')
+    async def seek_audio(self, ctx, seconds: int):
+        if ctx.voice_client:
+            vc = typing.cast(wavelink.Player, ctx.voice_client)
+            await vc.seek(seconds * 1000)
+            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Successfully cleared the queue!")
+        else:
+            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | You need to be in a channel with the bot!")
 
     @commands.hybrid_command(name='clear', help='Clears all songs in queue.')
     async def reset_queue(self, ctx):
@@ -272,6 +280,12 @@ class Audio(commands.Cog):
         await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing,
                                              name=f'Music in {total} servers! | {default_prefix}help'))
 
+    
+    @commands.Cog.listener()
+    async def on_wavelink_track_start(self, payload: wavelink.TrackEndEventPayload):
+        logging.info(str(payload))
+        await self.update_status()
+    
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload):
         logging.info(str(payload))
@@ -281,10 +295,6 @@ class Audio(commands.Cog):
             await payload.player.play(payload.player.queue.get())
         # elif extra_data.get("loop") is not None and extra_data.get("loop") is True:
         #     await payload.player.play(payload.track)
-
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        await self.update_status()
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
