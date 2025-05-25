@@ -311,7 +311,7 @@ async def setup(bot): # this is called by Pycord to setup the cog
             identifier=node["name"],
             uri=node["host"] + ":" + str(node["port"]),
             password=node['pass'],
-            inactive_player_timeout=(node["timeout"] or 300)
+            inactive_player_timeout=(node.get("timeout") or 300)
         ))
     await wavelink.Pool.connect(nodes=nodes, client=bot)
     await bot.add_cog(cog) # add the cog to the bot

@@ -48,6 +48,10 @@ async def sync_commands(guild=None):
         await bot.tree.sync()
     logging.info("Command tree synced")
 
+async def update_activity():
+    bot.activity = discord.Activity(type=discord.ActivityType.playing,
+                                             name=f'Music in {len(bot.voice_clients)} servers! | {data_parser.default_prefix}help')
+
 default_json_server = json.loads(str(open("./settings/default_server_config.json", 'r+').read()))
 
 @commands.cooldown(2, 7.3, commands.BucketType.guild)
@@ -187,8 +191,7 @@ async def index_cogs():
                     await bot.load_extension(f"cogs.{i.split('.')[0]}")
                     logging.info(f"indexed and loaded extension with path: {i}")
                 elif("disabled" in i):
-                    logging.warning(f"Unloading extension: {i}, extension disabled!")
-                    await bot.unload_extension(f"cogs.{i.split('.')[0]}")
+                    logging.warning(f"Ignoring extension: {i}, extension disabled!")
             except commands.ExtensionAlreadyLoaded:
                 logging.error("Failed to load extension: Extension has already been loaded. This could be due to a reconnect or other internal issues.")
 
@@ -240,6 +243,11 @@ async def on_ready():
 {len(bot.voice_clients)} voice clients, {guilds_all.qsize()} guild(s) indexed, Database running at {db_address[0]}:{db_address[1]}
 """))
     logging.info(f"Started bot as {bot.user.name}")
+
+@bot.check
+async def update_status(ctx):
+    await update_activity()
+    return True
 
 @bot.event
 async def on_command_error(ctx, error: discord.DiscordException):
