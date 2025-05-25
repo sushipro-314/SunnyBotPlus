@@ -211,7 +211,7 @@ class Audio(commands.Cog):
                 for i in vc.queue:
                     if i is not None:
                         embed.add_field(name=i.title,
-                                    value=f"{str(datetime.timedelta(milliseconds=i.position))} - From {i.source}")
+                                    value=f"{str(datetime.timedelta(milliseconds=i.length))} - From {i.source}")
                 await ctx.send(embed=embed)
             else:
                 await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | Nothing is playing!")
@@ -235,12 +235,12 @@ class Audio(commands.Cog):
 
     @commands.hybrid_command(name='seek', help='Seeks to the seconds in the currently playing song.')
     async def seek_audio(self, ctx, seconds: int):
-        if ctx.voice_client:
+        if ctx.voice_client and ctx.voice_client.current:
             vc = typing.cast(wavelink.Player, ctx.voice_client)
             await vc.seek(seconds * 1000)
-            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Successfully cleared the queue!")
+            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Successfully seeked to position {datetime.timedelta(milliseconds=vc.current.position)}!")
         else:
-            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | You need to be in a channel with the bot!")
+            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | You need to be in a channel with the bot and playing music!")
 
     @commands.hybrid_command(name='clear', help='Clears all songs in queue.')
     async def reset_queue(self, ctx):
