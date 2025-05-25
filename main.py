@@ -69,6 +69,16 @@ async def update_config(ctx, value, setting=""):
         else:
             await ctx.send("Please double check that you are setting the correct values and try again!")
 
+@commands.cooldown(2, 7.3, commands.BucketType.guild)
+@bot.hybrid_command(name="prefix", help_command="Changes the server's prefix")
+@commands.has_permissions(manage_guild=True)
+async def update_config(ctx, prefix):
+    g_data = await data_parser.get_guild_data(ctx.guild.id)
+    if g_data is not None:
+        g_data["prefix"] = prefix
+        wg_data = await data_parser.write_guild_data(ctx.guild.id, g_data)
+        await ctx.send(f"Updated Configuration for server {ctx.guild.name}, value is now {wg_data['prefix']}")
+
 async def send_all_guilds(message, content, developer):
     async for g in bot.fetch_guilds():
         guild_data = await data_parser.get_guild_data(g.id)
