@@ -111,7 +111,7 @@ class Moderation(commands.Cog):
             description=f"🚓 | Information: {member.global_name} ({member.display_name}",
             title=f"User information for {str(member)}")
         embed.add_field(name="User Number", value=f'User {member.display_name} is member number #{await self.get_member_number(member=member)}')
-        embed.add_field(name="Roles", value=f'User has the following roles: ```{str(member.roles)}```')
+        embed.add_field(name="Roles", value=f'User has the following roles: ```{str(member.roles[:300])}```')
         embed.set_footer(text=f"Member ID: {str(member.id)} | Created at: <t:{str(member.created_at.timestamp())}:F> | Server: {member.guild.name}")
         await ctx.send(embed=embed)
 

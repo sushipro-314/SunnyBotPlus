@@ -190,9 +190,7 @@ async def index_cogs():
                     logging.warning(f"Unloading extension: {i}, extension disabled!")
                     await bot.unload_extension(f"cogs.{i.split('.')[0]}")
             except commands.ExtensionAlreadyLoaded:
-                logging.error("Failed to load extension: Extension has already been loaded. This could be due to a reconnect or other issues.")
-            except commands.ExtensionError:
-                logging.error("Failed to load extension: Unknown error. Sorry!")
+                logging.error("Failed to load extension: Extension has already been loaded. This could be due to a reconnect or other internal issues.")
 
 
 async def index_guilds():
