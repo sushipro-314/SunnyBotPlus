@@ -4,5 +4,6 @@
   "We're working on a website soon.",
   "You can specify search terms using quotation marks!",
   "Any soundcloud or bandcamp URL will work while using the bot",
-  "Users can only have ranks when talking to reduce issues in performance."
+  "Users can only have ranks when talking to reduce issues in performance.",
+  "Changing your endpoint is recommended to increase performance in some cases, especially under high latency situations that may affect your audio-based experience."
 ]

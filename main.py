@@ -1,6 +1,6 @@
 import asyncio
 import json
-import logging.handlers
+import logging
 import os
 import random
 import shutil
@@ -72,7 +72,7 @@ async def update_config(ctx, value, setting=""):
 @commands.cooldown(2, 7.3, commands.BucketType.guild)
 @bot.hybrid_command(name="prefix", help_command="Changes the server's prefix")
 @commands.has_permissions(manage_guild=True)
-async def update_config(ctx, prefix):
+async def update_prefix(ctx, prefix):
     g_data = await data_parser.get_guild_data(ctx.guild.id)
     if g_data is not None:
         g_data["prefix"] = prefix
@@ -256,6 +256,8 @@ async def on_ready():
 
 @bot.check
 async def update_status(ctx):
+    if bot.latency <= 200:
+        logging.info(f"Bot latency is {bot.latency}, the bot may be overloaded.")
     await update_activity()
     return True
 
