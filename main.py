@@ -28,6 +28,11 @@ config = data_parser.config
 
 token = config['token']
 
+if not os.path.exists("./settings/guilds"):
+    os.mkdir("guilds")
+if not os.path.exists("./settings/members"):
+    os.mkdir("members")
+
 async def prefix(bot, message):
     g_data = await data_parser.get_guild_data(message.guild.id)
     if (g_data is None) or (g_data is None) or (g_data.get("prefix") is None):
