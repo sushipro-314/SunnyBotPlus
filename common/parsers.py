@@ -18,7 +18,7 @@ class ConfigParser:
 
 class GuildParser:
     config = json.loads(open("./config.json").read())
-    storage_mode = (config["storage"] or "DB")
+    storage_mode = (config.get("storage") or "JSON")
     db = AsyncMongoClient(config['uris']['database']) if storage_mode == "DB" else None
     default_prefix = config['prefix']
     
