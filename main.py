@@ -22,10 +22,6 @@ data_parser = common.parsers.GuildParser()
 
 total_guilds = []
 
-async def random_digits(number=4):
-    random_string = ''.join(random.choices(string.digits + string.ascii_lowercase, k=number))
-    return random_string
-
 global session
 db = data_parser.db
 config = data_parser.config
@@ -51,24 +47,6 @@ async def sync_commands(guild=None):
 async def update_activity():
     bot.activity = discord.Activity(type=discord.ActivityType.playing,
                                              name=f'Music in {len(bot.voice_clients)} servers! | {data_parser.default_prefix}help')
-
-default_json_server = json.loads(str(open("./settings/default_server_config.json", 'r+').read()))
-
-@commands.cooldown(2, 7.3, commands.BucketType.guild)
-@bot.hybrid_command(name="config", help_command="Changes the server configuration manually. WARNING: This may cause unexpected behaviors, it's best to use module-specific commands to update server information!")
-@commands.has_permissions(manage_guild=True)
-async def update_config(ctx, value, setting=""):
-        g_data = await data_parser.get_guild_data(ctx.guild.id)
-        if g_data is not None and (setting in default_json_server.keys()):
-            g_data[setting] = value
-            g_data_new = await data_parser.write_guild_data(ctx.guild.id, g_data)
-            if g_data_new:
-                await ctx.send(f"Updated Configuration for server {ctx.guild.name}, value is now {value}")
-            else:
-                await ctx.send(f"Updated Configuration for server {ctx.guild.name}, value is now **Unknown**")
-        else:
-            await ctx.send("Please double check that you are setting the correct values and try again!")
-
 @commands.cooldown(2, 7.3, commands.BucketType.guild)
 @bot.hybrid_command(name="prefix", help_command="Changes the server's prefix")
 @commands.has_permissions(manage_guild=True)
@@ -142,7 +120,7 @@ async def unban_server(ctx, guild_id):
 
 @bot.hybrid_command(name="eval", help_command="Developer Only.")
 @commands.has_permissions(manage_guild=True)
-async def eval_code(ctx, code, awaitable=False):
+async def eval_code(ctx, code):
     developers = open('settings/developers.txt').readline()
     if ctx.message.author.name in developers:
         eval(code)
@@ -221,6 +199,7 @@ async def on_shard_ready(shard_id):
 
 @bot.event
 async def on_ready():
+    await bot.wait_until_ready()
     if os.path.exists("jobs"):
         shutil.rmtree("jobs")
     os.mkdir("jobs")
@@ -230,7 +209,10 @@ async def on_ready():
     logging.info("Modules/Cogs loaded!")
     await sync_commands()
     logging.info("Slash commands synced!")
-    db_address = await db.address
+    if data_parser.db is not None:
+        db_address = f"Database running at {(await db.address)[0]}:{(await db.address)[1]}"
+    else:
+        db_address = "No database"
     logging.info(str(f"""
 
 
@@ -250,14 +232,14 @@ async def on_ready():
                                                     \  ' ;`----'                           
                                                      `--`                                  
 
-{len(bot.voice_clients)} voice clients, {guilds_all.qsize()} guild(s) indexed, Database running at {db_address[0]}:{db_address[1]}
+{len(bot.voice_clients)} voice clients, {guilds_all.qsize()} guild(s) indexed, {db_address}
 """))
     logging.info(f"Started bot as {bot.user.name}")
 
 @bot.check
 async def update_status(ctx):
     if bot.latency <= 200:
-        logging.info(f"Bot latency is {bot.latency}, the bot may be overloaded.")
+        logging.warning(f"Bot latency is {bot.latency}, the bot may experiencing internet issues.")
     await update_activity()
     return True
 
@@ -299,7 +281,7 @@ async def on_command_error(ctx, error: discord.DiscordException):
             break
         else:
             err_msg = "Cannot explain this error"
-    error_id = await random_digits()
+    error_id = await data_parser.random_digits()
     await ctx.send(
         f"An error occurred: ```{error}``` {err_msg}. If this error happens continually, contact the support server! (Crash ID: {error_id})")
     error_json = {
