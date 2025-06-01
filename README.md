@@ -12,7 +12,7 @@ These may include primary features at the moment since the bot is still in devel
 - Python
 - FFMPEG
 - LavaLink Nodes. [Public Nodes can be found here](https://lavalink.darrennathanael.com/)
-- A MongoDB Database
+- A MongoDB Database (JSON also supported but not recommended)
 ## Instructions
 Run the following commands to install the bot
 ```
@@ -26,6 +26,7 @@ Almost there! Now make a file that looks something like this, name it `config.js
 {
     "token": "",
     "prefix": "sun$",
+    "storage": "JSON",
     "uris": {
         "database": "mongodb://localhost",
         "lavalink": [
