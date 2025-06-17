@@ -1,0 +1,21 @@
+{
+    "token": "",
+    "prefix": "sun$",
+    "storage": "JSON",
+    "uris": {
+        "database": "mongodb://localhost",
+        "lavalink": [
+            {
+                "name": "main",
+                "host": "http://localhost",
+                "port": 2333,
+                "pass": "youshallnotpass12324"
+            }
+        ]
+    },
+    "invite": "https://discord.gg/TCE7KWjc9R",
+    "max_song_count": 15,
+    "shard_ids": [
+        0
+    ]
+}
