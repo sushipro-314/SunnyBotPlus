@@ -83,12 +83,10 @@ async def send_all_guilds(message, content, developer):
 
 @bot.hybrid_command(name="announce", help_command="Developer Only.")
 @commands.has_permissions(manage_guild=True)
+@commands.is_owner()
 async def dev_announce_send(ctx, message):
-    if ctx.message.author.name in open('settings/developers.txt').readline():
-        msg = await ctx.send("Sending message" + message + "to all guilds!")
-        await send_all_guilds(content=message, message=msg, developer=ctx.author.name)
-    else:
-        await ctx.send("You do not have permission to use this command.")
+    msg = await ctx.send("Sending message" + message + "to all guilds!")
+    await send_all_guilds(content=message, message=msg, developer=ctx.author.name)
 
 async def send_banned_embed(guild):
     bannedembed = discord.Embed(
@@ -102,65 +100,42 @@ async def send_banned_embed(guild):
 
 @bot.hybrid_command(name="exclude", help_command="Developer Only.")
 @commands.has_permissions(manage_guild=True)
-async def ban_server(ctx, guild_id):
-    if ctx.message.author.name in open('settings/developers.txt').readline():
-        gdata = await data_parser.get_guild_data(guild_id=guild_id)
-        gdata["disabled"] = True
-        written = await data_parser.write_guild_data(guild_id=guild_id, data=gdata)
-        await send_banned_embed(guild=await bot.fetch_guild(guild_id))
-        await ctx.send("Guild data banned. Banned value is set to " + str(written["disabled"]))
-    else:
-        await ctx.send("You do not have permission to use this command.")
-
-@bot.hybrid_command(name="unexclude", help_command="Developer Only.")
-@commands.has_permissions(manage_guild=True)
-async def unban_server(ctx, guild_id):
-    if ctx.message.author.name in open('settings/developers.txt').readline():
-        gdata = await data_parser.get_guild_data(guild_id=guild_id)
-        gdata["disabled"] = False
-        written = await data_parser.write_guild_data(guild_id=guild_id, data=gdata)
-        await send_banned_embed(guild=await bot.fetch_guild(guild_id))
-        await ctx.send("Guild data unbanned. Banned value is set to " + str(written["disabled"]))
-    else:
-        await ctx.send("You do not have permission to use this command.")
+@commands.is_owner()
+async def ban_server(ctx, guild_id, excluded=True):
+    gdata = await data_parser.get_guild_data(guild_id=guild_id)
+    gdata["disabled"] = excluded
+    written = await data_parser.write_guild_data(guild_id=guild_id, data=gdata)
+    await send_banned_embed(guild=await bot.fetch_guild(guild_id))
+    await ctx.send("Guild data banned. Banned value is set to " + str(written["disabled"]))
 
 @bot.hybrid_command(name="eval", help_command="Developer Only.")
 @commands.has_permissions(manage_guild=True)
+@commands.is_owner()
 async def eval_code(ctx, code):
-    developers = open('settings/developers.txt').readline()
-    if ctx.message.author.name in developers:
-        eval(code)
-        await ctx.send("Evaluated Code Successfully! Result: " + str(eval(code)))
-    else:
-        await ctx.send(f"Congrats!! You found the eval command, allowing people to directly run code on the host machine. Such a shame it only works for {random.choice(developers)} though...")
+    eval(code)
+    await ctx.send("Evaluated Code Successfully! Result: " + str(eval(code)))
 
 @bot.hybrid_command(name="viewdb", help_command="Developer Only.")
 @commands.has_permissions(manage_guild=True)
+@commands.is_owner()
 async def view_database(ctx, data="guilds"):
-    developers = open('settings/developers.txt').readline()
-    if ctx.message.author.name in developers:
-       if data:
+    if data:
            entries = await db.get_database(data).list_collection_names()
            await ctx.send("Listing all database collection names\n```" + str(entries).replace(",", "\n") + "```")
-    else:
-        await ctx.send(f"Congrats!! You found the view db command, revealing all the data in the bot's internal database. Such a shame it only works for {random.choice(developers)} though...")
 
 @bot.hybrid_command(name="searchdb", help_command="Developer Only.")
 @commands.has_permissions(manage_guild=True)
+@commands.is_owner()
 async def search_database(ctx, collection, data="guilds"):
-    developers = open('settings/developers.txt').readline()
-    if ctx.message.author.name in developers:
-       if data:
+    if data:
            collection = await db.get_database(data).get_collection(collection).find({}).to_list()
            await ctx.send("Listing all database collection entries\n```" + str(collection).replace(",", "\n") + "```")
-    else:
-        await ctx.send(f"Congrats!! You found the get db command, allowing people to search the entire database. Such a shame it only works for {random.choice(developers)} though...")
 
 @bot.hybrid_command(name="sync", help_command="Developer Only.")
+@commands.is_owner()
 async def sync_command(ctx):
-    if ctx.message.author.name in open('settings/developers.txt').readline():
-        await sync_commands()
-        await ctx.send("Synced.")
+    await sync_commands()
+    await ctx.send("Synced.")
 
 @bot.event
 async def on_guild_join(guild):

@@ -302,7 +302,6 @@ class Audio(commands.Cog):
             await player.channel.send(f"{await self.get_emoji (guild=player.guild.id, emoji='sunny_thinking')} | The player has been inactive for `{player.inactive_timeout}` seconds. We need to disconnect due to practical reasons, hosting costs, etc. Thank you!\n{await self.generate_tip(g=player.guild)}")
             await player.disconnect()
 
-
 async def setup(bot): # this is called by Pycord to setup the cog
     cog = Audio(bot)
     nodes = []
