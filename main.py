@@ -41,7 +41,8 @@ async def prefix(bot, message):
     else:
         return g_data["prefix"], data_parser.default_prefix
 
-bot = commands.AutoShardedBot(command_prefix=prefix, intents=intents, case_insensitive=False, shard_ids=config["shard_ids"], shard_count=config["shard_count"] or len(config["shard_ids"]))
+bot = commands.AutoShardedBot(command_prefix=prefix, intents=intents, case_insensitive=False, shard_ids=config["shard_ids"], shard_count=config["shard_count"] or len(config["shard_ids"]), activity=discord.Activity(type=discord.ActivityType.listening,
+                                             name=f'music across all servers | {data_parser.default_prefix}help'))
 
 async def sync_commands(guild=None):
     if guild is not None:
@@ -50,9 +51,6 @@ async def sync_commands(guild=None):
         await bot.tree.sync()
     logging.info("Command tree synced")
 
-async def update_activity():
-    bot.activity = discord.Activity(type=discord.ActivityType.playing,
-                                             name=f'Music in {len(bot.voice_clients)} servers! | {data_parser.default_prefix}help')
 @commands.cooldown(2, 7.3, commands.BucketType.guild)
 @bot.hybrid_command(name="prefix", help_command="Changes the server's prefix")
 @commands.has_permissions(manage_guild=True)
@@ -219,9 +217,8 @@ async def on_ready():
 
 @bot.check
 async def update_status(ctx):
-    if bot.latency <= 200:
+    if bot.latency >= 200:
         logging.warning(f"Bot latency is {bot.latency}, the bot may experiencing internet issues.")
-    await update_activity()
     return True
 
 @bot.event
