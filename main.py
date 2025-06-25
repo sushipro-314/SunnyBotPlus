@@ -15,8 +15,6 @@ import common.parsers
 
 intents = discord.Intents.all()
 
-indexed_guilds = asyncio.Queue()
-
 
 data_parser = common.parsers.GuildParser()
 
@@ -165,12 +163,12 @@ async def index_cogs():
 
 async def index_guilds():
     index = 0
+    indexed_guilds = asyncio.Queue()
     async for g in bot.fetch_guilds():
         index += 1
         if not await data_parser.guild_exists(g.id):
             await data_parser.generate_guild_data(guild=g)
-            system_c = await data_parser.generate_system_channel(guild=g)
-        indexed_guilds.put_nowait(g)
+        await indexed_guilds.put(g)
     return indexed_guilds
 @bot.event
 async def on_shard_ready(shard_id):
@@ -215,8 +213,8 @@ async def on_ready():
 """))
     logging.info(f"Started bot as {bot.user.name}")
 
-@bot.check
-async def update_status(ctx):
+@bot.event
+async def on_message(message):
     if bot.latency >= 200:
         logging.warning(f"Bot latency is {bot.latency}, the bot may experiencing internet issues.")
     return True
