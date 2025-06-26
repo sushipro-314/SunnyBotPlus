@@ -33,7 +33,10 @@ if data_parser.storage_mode == "JSON":
         os.mkdir("members")
 
 async def prefix(bot, message):
-    g_data = await data_parser.get_guild_data(message.guild.id)
+    if message.guild:
+        g_data = await data_parser.get_guild_data(message.guild.id)
+    else:
+        g_data = None
     if (g_data is None) or (g_data is None) or (g_data.get("prefix") is None):
         return data_parser.default_prefix
     else:
