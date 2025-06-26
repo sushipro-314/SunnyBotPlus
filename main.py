@@ -214,12 +214,6 @@ async def on_ready():
     logging.info(f"Started bot as {bot.user.name}")
 
 @bot.event
-async def on_message(message):
-    if bot.latency >= 200:
-        logging.warning(f"Bot latency is {bot.latency}, the bot may experiencing internet issues.")
-    return True
-
-@bot.event
 async def on_command_error(ctx, error: discord.DiscordException):
     errors = [
         {
