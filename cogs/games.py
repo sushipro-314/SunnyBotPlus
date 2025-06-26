@@ -223,6 +223,29 @@ class Games(commands.Cog):
         else:
             logging.error("Failed to set rank channel: guild data not found")
             await ctx.send("Guild data was not found.")
+    
+    @rankconfig.command(help="Lists all roles for leveling up users.")
+    @commands.has_permissions(manage_guild=True)
+    async def viewinfo(self, ctx):
+        guild_data = await data_parser.get_guild_data(ctx.guild.id)
+        if guild_data is not None:
+            rank_role_strings = ""
+            if guild_data.get("rank_roles") is None:
+                guild_data["rank_roles"] = []
+                await data_parser.write_guild_data(ctx.guild.id, data=guild_data)
+            for r in guild_data["rank_roles"]:
+                rank_role_strings += "ID: " + str(r['id']) + "\nLevel: " + str(r["amount"]) + "\n"
+            embed_info = discord.Embed(
+                            title=f"Ranking Information for server {ctx.guild.name}",
+                    )
+            embed_info.add_field(name="XP Cost", value=str(guild_data['xp_cost']))
+            embed_info.add_field(name="XP Gain", value=str(guild_data["xp_gain"]))
+            embed_info.add_field(name="Notification Channel", value="<#" + str(guild_data['rank_channel']) + ">")
+            embed_info.add_field(name="Rank-up Roles", value=rank_role_strings)
+            await ctx.send(embeds=[embed_info])
+        else:
+            logging.error("Failed to set rank channel: guild data not found")
+            await ctx.send("Guild data was not found.")
 
     @rankconfig.command(help="Removes a role for when a user levels up.")
     @commands.has_permissions(manage_guild=True)
