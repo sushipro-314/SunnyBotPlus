@@ -42,7 +42,7 @@ async def prefix(bot, message):
     else:
         return g_data["prefix"], data_parser.default_prefix
 
-bot = commands.AutoShardedBot(command_prefix=prefix, intents=intents, case_insensitive=False, shard_ids=config["shard_ids"], shard_count=config["shard_count"] or len(config["shard_ids"]), activity=discord.Activity(type=discord.ActivityType.listening,
+bot = commands.AutoShardedBot(command_prefix=prefix, intents=intents, case_insensitive=True, shard_ids=config["shard_ids"], shard_count=config["shard_count"] or len(config["shard_ids"]), activity=discord.Activity(type=discord.ActivityType.listening,
                                              name=f'music across all servers | {data_parser.default_prefix}help'))
 
 async def sync_commands(guild=None):
@@ -169,13 +169,11 @@ async def index_guilds():
     indexed_guilds = asyncio.Queue()
     async for g in bot.fetch_guilds():
         index += 1
+        await db.get_database("music").get_collection(str(g.id)).delete_many({})
         if not await data_parser.guild_exists(g.id):
             await data_parser.generate_guild_data(guild=g)
         await indexed_guilds.put(g)
     return indexed_guilds
-@bot.event
-async def on_shard_ready(shard_id):
-    logging.info(f'Shard #{shard_id} is ready')
 
 @bot.event
 async def on_ready():
@@ -212,7 +210,7 @@ async def on_ready():
                                                     \  ' ;`----'                           
                                                      `--`                                  
 
-{len(bot.voice_clients)} voice clients, {guilds_all.qsize()} guild(s) indexed, {db_address}
+{len(bot.voice_clients)} voice clients, {guilds_all.qsize()} guild(s) indexed, {db_address}, #{bot.shard_id or "1"} shard
 """))
     logging.info(f"Started bot as {bot.user.name}")
 

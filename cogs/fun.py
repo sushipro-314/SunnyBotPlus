@@ -6,14 +6,17 @@ import aiohttp
 import discord
 from discord.ext import commands
 import gtts
+import zipfile
 import random
 import common.parsers
 from datetime import datetime
 import logging
-
+import wavelink
+import typing
 from googleapiclient.discovery import build
 from translate import Translator
 from common.parsers import GuildParser
+from io import BufferedIOBase, BytesIO
 from asyncio.subprocess import create_subprocess_exec, create_subprocess_shell
 
 data_parser = GuildParser()
@@ -64,7 +67,7 @@ class FunOrRandom(commands.Cog):
 
     @commands.hybrid_command(name='avatar',
                       help="Get the user's avatar")
-    async def get_avatar(self, ctx, user: discord.Member = None):
+    async def get_avatar(self, ctx, user: discord.Member):
         embed = discord.Embed()
         if not user:
             user = ctx.message.author
@@ -121,7 +124,7 @@ class FunOrRandom(commands.Cog):
 
     @translate.command(name='text',
                        help='Translate a text value')
-    async def translate_message(self, ctx, to_lang, text_value):
+    async def translate_text(self, ctx, to_lang, text_value):
         logging.info(text_value)
         translator = Translator(to_lang=to_lang)
         text = translator.translate(text=text_value)
@@ -133,13 +136,6 @@ class FunOrRandom(commands.Cog):
         embed = discord.Embed(title=f'{top}, {bottom}')
         embed.set_image(url=f'https://api.memegen.link/images/buzz/{top.replace(" ", "_")}/{bottom.replace(" ", "_")}.png')
         await ctx.send(embed=embed)
-
-    async def get_guild_data(self, guild_id):
-        return json.loads(open(f"settings/guilds/{guild_id}.json", 'r+').read())
-
-    async def write_guild_data(self, guild_id, data):
-        open(f"settings/guilds/{guild_id}.json", 'w+').write(json.dumps(data))
-        return await self.get_guild_data(guild_id=guild_id)
 
     async def generate_ship_image(self, members, edit_message):
         global ship_emojis
@@ -175,31 +171,54 @@ class FunOrRandom(commands.Cog):
         if not os.path.exists(dir):
             os.mkdir(dir)
 
-    async def convert_attachment(self, attachment_list, output_format, message, scale):
-        file_list = []
-        for attachment in attachment_list:
-            await self.create_directory("jobs")
-            await self.create_directory(f"jobs/{attachment.id}/")
-            await attachment.save(f"jobs/{attachment.id}/{attachment.filename}")
-            p = await create_subprocess_exec("ffmpeg", "-i", f"jobs/{attachment.id}/{attachment.filename}",
-                                                 f"jobs/{attachment.id}/output.{output_format}")
-            await p.wait()
-            file_list.append(discord.File(f"jobs/{attachment.id}/output.{output_format}"))
-        await message.edit(content="Your files have been processed!", attachments=file_list)
+    # FIXME make file attachment function work by parsing the output string
+    # async def convert_attachment(self, attachment_list, output_format: str, message, scale, size):
+    #     file_list = []
+    #     duration = len(attachment_list)
+    #     for attachment in attachment_list:
+    #         duration -= 2
+    #         logging.info("Creating directories...")
+    #         await self.create_directory("jobs")
+    #         await self.create_directory(f"jobs/{attachment.id}/")
+    #         await self.create_directory(f"jobs/{attachment.id}/output")
+    #         await attachment.save(f"jobs/{attachment.id}/{attachment.filename}")
+    #         logging.info("Running FFMPEG...")
+    #         if size >= 300000:
+    #             file_size_string = "2MB"
+    #         else:
+    #             file_size_string = "5MB"
+    #         logging.info("File size: " + str(size))
+    #         p = await create_subprocess_exec("ffmpeg", "-i", f"jobs/{attachment.id}/{attachment.filename}", "-fs", file_size_string,
+    #                                              f"jobs/{attachment.id}/output/output{output_format}", "-s", scale)
+    #         await p.wait()
+    #         logging.info("Adding Files to file list for uploading...")
+    #         files_output = os.listdir(f"jobs/{attachment.id}/output")
+    #         if len(files_output) > 2 and output_format.find("d") != -1:
+    #             with zipfile.ZipFile(f"jobs/{attachment.id}/output.zip", 'w') as jobzip:
+    #                 for file in range(0, 50):
+    #                     jobzip.write(f"jobs/{attachment.id}/output/{files_output[file]}", f'output_{str(file)}.png')
+    #             file_list.append(discord.File(f"jobs/{attachment.id}/output.zip"))
+    #         else:
+    #             file_list.append(discord.File(f"jobs/{attachment.id}/output/output{output_format}"))
+    #     await message.edit(content="Your files have been processed!", attachments=file_list)
+    #     logging.info("Processing Complete!")
 
-    @commands.command(name='to',
-                      help='Converts one format to another')
-    async def to_convert(self, ctx, format="wav", dimensions=""):
-        attachment_list = ctx.message.attachments
-        if len(attachment_list) <= 10:
-            msg = await ctx.send(f"Processing {len(attachment_list)} attachments")
-            if dimensions.find("x"):
-                string = f"-s {dimensions}"
-            else:
-                string = ""
-            await self.convert_attachment(attachment_list=attachment_list, output_format=format, message=msg, scale=string)
-        else:
-            await ctx.send("Error: Please specify less than 10 attachments, due to file size constraints we need to do this")
+    # @commands.command(name='to',
+    #                   help='Converts one format to another')
+    # async def to_convert(self, ctx, format="wav", dimensions=""):
+    #     attachment_list = ctx.message.attachments
+    #     attachment_size = 0
+    #     for attachment in attachment_list:
+    #         attachment_size += attachment.size
+    #     if (len(attachment_list) <= 10):
+    #         msg = await ctx.send(f"Processing {len(attachment_list)} attachments")
+    #         if dimensions.find("x"):
+    #             string = f"{dimensions}"
+    #         else:
+    #             string = ""
+    #         await self.convert_attachment(attachment_list=attachment_list, output_format=format, message=msg, scale=string, size=attachment_size)
+    #     else:
+    #         await ctx.send("Error: Please specify less than 10 attachments. This is due to file size constraints.")
 
     @commands.hybrid_command(name='d',
                       help='Roles a dice between two values')

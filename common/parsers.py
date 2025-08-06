@@ -21,6 +21,9 @@ class GuildParser:
     storage_mode = (config.get("storage") or "JSON")
     db = AsyncMongoClient(config['uris']['database']) if storage_mode == "DB" else None
     default_prefix = config['prefix']
+    async def random_digits(self, number=4):
+        random_string = ''.join(random.choices(string.digits + string.ascii_lowercase, k=number))
+        return random_string
     
     async def write_json_data(self, location, data, dir=None):
         if not os.path.exists(location) and dir is not None:
@@ -103,7 +106,3 @@ class GuildParser:
             "disabled": False
         }
         await self.write_guild_data(guild_id=guild.id, data=json_data)
-
-    async def random_digits(self, number=4):
-        random_string = ''.join(random.choices(string.digits + string.ascii_lowercase, k=number))
-        return random_string

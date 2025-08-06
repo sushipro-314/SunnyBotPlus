@@ -16,10 +16,10 @@ import common.parsers
 from wavelink import ExtrasNamespace
 from wavelink.types.tracks import TrackPayload, TrackInfoPayload
 
-parsers = [common.parsers.GuildParser(), common.parsers.ConfigParser()]
-default_prefix = parsers[0].config["prefix"]
-config = parsers[0].config
-db = parsers[0].db
+parser = common.parsers.GuildParser()
+default_prefix = parser.config["prefix"]
+config = parser.config
+db = parser.db
 
 class Audio(commands.Cog):
     """
@@ -32,9 +32,11 @@ class Audio(commands.Cog):
 
     async def check_and_connect(self, voice_channel: discord.VoiceChannel, vc, tts=False):
         if voice_channel and vc is None:
+            if db is not None:
+                await db.get_database("music").get_collection(str(voice_channel.guild.id)).delete_many({})
             voice = await voice_channel.connect(cls=wavelink.Player, self_deaf=True)
             return voice
-
+    
     async def get_emoji(self, emoji, guild):
         emoji_obj = "🎶"
         return str(emoji_obj)
@@ -46,17 +48,21 @@ class Audio(commands.Cog):
                 duration += 1
                 if duration <= limit:
                     vc.queue.put(i)
+                    if db is not None:
+                        await db.get_database("music").get_collection(str(vc.guild.id)).insert_one({
+                        "title": i.title,
+                        "uri": i.uri,
+                        "author": i.author,
+                        "position": i.position,
+                        "preview_url": i.preview_url,
+                        "id": i.identifier
+                        })
                     song_list += f'{i.title}; '
                     songs = str(song_list)[:90]
                 else:
                     break
             if not vc.playing:
                 await vc.play(vc.queue.get())
-            vc.current.extras = ExtrasNamespace(
-                {
-                    "loop": False
-                }
-            )
             logging.info(vc)
             logging.info(songs)
             return songs
@@ -169,6 +175,8 @@ class Audio(commands.Cog):
                    help='Makes the bot leave a voice channel.')
     async def disconnect(self, ctx):
         try:
+            if db is not None:
+                await db.get_database("music").get_collection(str(ctx.guild.id)).delete_many({})
             await typing.cast(wavelink.Player, ctx.voice_client).disconnect()
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Left voice channel\n{await self.generate_tip(g=ctx.guild)}")
         except discord.ClientException:
@@ -235,10 +243,11 @@ class Audio(commands.Cog):
 
     @commands.hybrid_command(name='seek', help='Seeks to the seconds in the currently playing song.')
     async def seek_audio(self, ctx, seconds: int):
-        if ctx.voice_client and ctx.voice_client.current:
+        if ctx.voice_client:
             vc = typing.cast(wavelink.Player, ctx.voice_client)
-            await vc.seek(seconds * 1000)
-            await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Successfully seeked to position {datetime.timedelta(milliseconds=vc.current.position)}!")
+            if vc.current:
+                await vc.seek(seconds * 1000)
+                await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Successfully seeked to position {datetime.timedelta(milliseconds=vc.current.position)}!")
         else:
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thinking')} | You need to be in a channel with the bot and playing music!")
 
@@ -246,6 +255,8 @@ class Audio(commands.Cog):
     async def reset_queue(self, ctx):
         if ctx.voice_client:
             vc = typing.cast(wavelink.Player, ctx.voice_client)
+            if db is not None:
+                await db.get_database("music").get_collection(str(ctx.guild.id)).delete_many({})
             vc.queue.reset()
             await ctx.send(f"{await self.get_emoji (guild=ctx.guild.id, emoji='sunny_thumbsup')} | Successfully cleared the queue!")
         else:
@@ -290,16 +301,19 @@ class Audio(commands.Cog):
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload):
         logging.info(str(payload))
         await self.update_status()
-        extra_data = dict(payload.track.extras)
+        if payload.player and payload.player.guild:
+            if db is not None:
+                await db.get_database("music").get_collection(str(payload.player.guild.id)).delete_many({
+                "id": payload.track.identifier
+                })
         if payload.player and not payload.player.playing and not payload.player.queue.is_empty and payload.player.connected:
             await payload.player.play(payload.player.queue.get())
-        # elif extra_data.get("loop") is not None and extra_data.get("loop") is True:
-        #     await payload.player.play(payload.track)
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
         if player and player.guild:
             await player.channel.send(f"{await self.get_emoji (guild=player.guild.id, emoji='sunny_thinking')} | The player has been inactive for `{player.inactive_timeout}` seconds. We need to disconnect due to practical reasons, hosting costs, etc. Thank you!\n{await self.generate_tip(g=player.guild)}")
+            await self.update_status()
             await player.disconnect()
 
 async def setup(bot): # this is called by Pycord to setup the cog
