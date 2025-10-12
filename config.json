@@ -15,6 +15,7 @@
     },
     "invite": "https://discord.gg/TCE7KWjc9R",
     "max_song_count": 15,
+    "shard_count": 1,
     "shard_ids": [
         0
     ]
