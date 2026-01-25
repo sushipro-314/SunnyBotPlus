@@ -169,7 +169,8 @@ async def index_guilds():
     indexed_guilds = asyncio.Queue()
     async for g in bot.fetch_guilds():
         index += 1
-        await db.get_database("music").get_collection(str(g.id)).delete_many({})
+        if db:
+            await db.get_database("music").get_collection(str(g.id)).delete_many({})
         if not await data_parser.guild_exists(g.id):
             await data_parser.generate_guild_data(guild=g)
         await indexed_guilds.put(g)
