@@ -28,9 +28,9 @@ token = config['token']
 
 if data_parser.storage_mode == "JSON":
     if not os.path.exists("./settings/guilds"):
-        os.mkdir("guilds")
+        os.mkdir("./settings/guilds")
     if not os.path.exists("./settings/members"):
-        os.mkdir("members")
+        os.mkdir("./settings/members")
 
 async def prefix(bot, message):
     if message.guild:
