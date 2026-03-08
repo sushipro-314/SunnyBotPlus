@@ -1,6 +1,7 @@
 # SunnyBot+
 SunnyBot is an open-source discord bot offering Music, Moderation, and more!
-## BOT IS STILL IN DEVELOPMENT! If you want to help out or use the bot, know that a lot of features are unfinished or not implemented yet.
+## THIS BOT IS NO LONGER MAINTAINED!!!!!
+Due to recent events, Sunnybot has been reworked into [ClamCat, a music bot](https://discord.com/oauth2/authorize?client_id=1418673247863701627)
 ## Contributing
 [Don't feel like running the bot yourself, use our production version!](https://discord.com/oauth2/authorize?client_id=1029527116536107059)
 
